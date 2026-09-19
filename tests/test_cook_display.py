@@ -10,14 +10,17 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from homeassistant.components import frontend
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er, intent
+
+from custom_components.wereci.api import WereciError
 
 SENSOR = "sensor.wereci_cook_example_test_cooking"
 NEXT = "button.wereci_cook_example_test_next_step"
 START = "button.wereci_cook_example_test_start_cooking"
 RECIPE_BOX = "text.wereci_cook_example_test_recipe"
 SCREEN = "select.wereci_cook_example_test_screen"
+MATCHES = "select.wereci_cook_example_test_matches"
 NO_PHONE = "switch.wereci_cook_example_test_without_a_phone"
 TOKEN = "rt-secret-token-0123456789"
 SENDER = "sender-token-0123456789"
@@ -268,7 +271,7 @@ async def test_the_dashboard_comes_with_the_integration(
     nxt = control["cards"][2]["cards"][1]["tap_action"]
     assert nxt["target"] == {"entity_id": NEXT}
     assert SENSOR in control["cards"][1]["content"]
-    assert control["cards"][0]["entities"] == [RECIPE_BOX, SCREEN, NO_PHONE, START]
+    assert control["cards"][0]["entities"] == [RECIPE_BOX, MATCHES, SCREEN, NO_PHONE, START]
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}
     assert panel.to_response()["show_in_sidebar"] is True
@@ -416,6 +419,27 @@ def test_resembles() -> None:
     assert not resembles("chocolate fudge brownies", "Carrot cake with pecans")
 
 
+async def _type(hass: HomeAssistant, words: str) -> None:
+    await hass.services.async_call(
+        "text", "set_value", {"entity_id": RECIPE_BOX, "value": words}, blocking=True
+    )
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+
+async def _press_start(hass: HomeAssistant) -> None:
+    await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+
+
+PASTAS = {
+    "hits": [
+        {"id": "w-1", "title": "Pasta", "reference": True},
+        {"id": "p-1", "title": "Baked Skillet Pasta", "cookbook": "NYT"},
+        {"id": "p-2", "title": "Turmeric-Butter Pasta"},
+        {"id": "p-3", "title": "Classic Italian Meatballs", "cuisine": "Italian"},
+    ]
+}
+
+
 async def test_the_panel_starts_a_cook(
     hass: HomeAssistant, entry, list_call, relay
 ) -> None:
@@ -427,30 +451,105 @@ async def test_the_panel_starts_a_cook(
     await hass.async_block_till_done()
 
     with pytest.raises(ServiceValidationError, match="screen"):
-        await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+        await _press_start(hass)
 
     assert hass.states.get(SCREEN).attributes["options"] == ["Kitchen display"]
     await hass.services.async_call(
         "select", "select_option",
         {"entity_id": SCREEN, "option": "Kitchen display"}, blocking=True,
     )
-    await hass.services.async_call(
-        "text", "set_value", {"entity_id": RECIPE_BOX, "value": "carrot soup"}, blocking=True
-    )
     assert hass.states.get(NO_PHONE).state == "on"  # the panel's default
 
+    # Words that name one recipe: it is found and picked, Start cooks it.
     list_call.side_effect = lambda tool, args: (
-        {"hits": [{"id": "r-2", "title": "Carrot soup"}]}
+        {"hits": [{"id": "r-2", "title": "Carrot soup"}, {"id": "r-9", "title": "Leek tart"}]}
         if tool == "search_recipes"
         else RECIPE
     )
-    await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+    await _type(hass, "carrot soup")
+    matches = hass.states.get(MATCHES)
+    assert matches.state == "Carrot soup"
+    assert matches.attributes["options"] == ["Carrot soup", "Leek tart"]
+    assert matches.attributes["recipe_id"] == "r-2"
+
+    await _press_start(hass)
     await _settle(hass)
 
+    list_call.assert_any_await("get_recipe", {"id": "r-2"})
     assert shown[0].data["entity_id"] == player
     state = hass.states.get(SENSOR)
     assert (state.state, state.attributes["title"]) == ("cooking", "Carrot soup")
     assert state.attributes["driven_by"] == "home_assistant"
+
+
+async def test_a_vague_word_offers_matches_and_waits_for_a_pick(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    player = _cast_player(hass)
+    hass.states.async_set(player, "off", {"friendly_name": "Kitchen display"})
+    er.async_get(hass).async_update_entity(player, name="Kitchen display")
+    await hass.async_block_till_done()
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": SCREEN, "option": "Kitchen display"}, blocking=True,
+    )
+
+    list_call.side_effect = lambda tool, args: PASTAS if tool == "search_recipes" else RECIPE
+    await _type(hass, "pasta")
+
+    matches = hass.states.get(MATCHES)
+    # Two titles say "pasta": neither is guessed. The encyclopedia card is not offered.
+    assert matches.state == "unknown"
+    assert matches.attributes["options"] == [
+        "Baked Skillet Pasta", "Turmeric-Butter Pasta", "Classic Italian Meatballs"
+    ]
+    assert matches.attributes["searching"] is False
+    with pytest.raises(ServiceValidationError, match="pick one"):
+        await _press_start(hass)
+
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": MATCHES, "option": "Classic Italian Meatballs"}, blocking=True,
+    )
+    assert hass.states.get(MATCHES).attributes["recipe_id"] == "p-3"
+    await _press_start(hass)
+    await _settle(hass)
+    list_call.assert_any_await("get_recipe", {"id": "p-3"})
+    assert hass.states.get(SENSOR).state == "cooking"
+
+
+async def test_search_failures_and_empty_results_say_so(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    player = _cast_player(hass)
+    hass.states.async_set(player, "off", {"friendly_name": "Kitchen display"})
+    er.async_get(hass).async_update_entity(player, name="Kitchen display")
+    await hass.async_block_till_done()
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": SCREEN, "option": "Kitchen display"}, blocking=True,
+    )
+
+    list_call.side_effect = lambda tool, args: {"hits": []}
+    await _type(hass, "zzz")
+    with pytest.raises(ServiceValidationError, match="found nothing"):
+        await _press_start(hass)
+
+    # Pressed with words nobody searched for yet (a restart): Start searches.
+    entry.runtime_data.cook_display.panel.searched = None
+    with pytest.raises(ServiceValidationError, match="found nothing"):
+        await _press_start(hass)
+    assert entry.runtime_data.cook_display.panel.searched == "zzz"
+
+    # weReci unreachable: the reason reaches the Matches entity and the button.
+    list_call.side_effect = WereciError("ReadTimeout")
+    await _type(hass, "soup")
+    assert hass.states.get(MATCHES).attributes["error"] == "weReci: ReadTimeout"
+    with pytest.raises(HomeAssistantError, match="ReadTimeout"):
+        await _press_start(hass)
 
 
 def _tools(answers: dict):

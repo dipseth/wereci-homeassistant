@@ -78,6 +78,9 @@
     "select": {
       "screen": {
         "name": "Screen"
+      },
+      "matches": {
+        "name": "Matches"
       }
     },
     "switch": {

@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
+from .cook_display import CookDisplay
 from .coordinator import WereciConfigEntry
 from .entity import CookDisplayEntity
 
@@ -26,15 +27,21 @@ class RecipeText(CookDisplayEntity, TextEntity, RestoreEntity):
     _attr_native_max = 200
     _attr_icon = "mdi:book-open-variant"
 
+    def __init__(self, display: CookDisplay, entry: WereciConfigEntry, key: str) -> None:
+        """Initialize."""
+        super().__init__(display, entry, key)
+        self._entry = entry
+
     @property
     def native_value(self) -> str:
         """The recipe to cook."""
         return self._display.panel.recipe
 
     async def async_set_value(self, value: str) -> None:
-        """Take a name or an id."""
-        self._display.panel.recipe = value.strip()
-        self.async_write_ha_state()
+        """Take words to search for, or an id. The Matches list fills in after."""
+        self._display.async_search(
+            self._entry.runtime_data.list_coordinator.async_call_tool, value.strip()
+        )
 
     async def async_added_to_hass(self) -> None:
         """Remember the last recipe across restarts."""

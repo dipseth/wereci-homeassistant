@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 import voluptuous as vol
@@ -14,7 +13,7 @@ from homeassistant.core import (
     SupportsResponse,
     callback,
 )
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, intent
 
 from .const import (
@@ -73,9 +72,6 @@ def _display(hass: HomeAssistant, call: ServiceCall) -> CookDisplay:
     return _runtime(hass, call).cook_display
 
 
-_RECIPE_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{18,}$", re.IGNORECASE)
-
-
 async def async_start_cook(
     hass: HomeAssistant, runtime: Any, data: dict[str, Any]
 ) -> dict[str, str]:
@@ -121,14 +117,27 @@ async def async_start_from_panel(hass: HomeAssistant, runtime: Any) -> None:
         raise ServiceValidationError("Pick a screen first")
     if panel.without_phone and not panel.recipe:
         raise ServiceValidationError("Type a recipe first — or turn off Without a phone")
-    key = "recipe_id" if _RECIPE_ID.match(panel.recipe) else "recipe"
+    display = runtime.cook_display
+    if panel.recipe and not panel.match_id and panel.searched != panel.recipe:
+        # Pressed mid-search, or the words outlived a restart: search first.
+        if not panel.searching:
+            display.async_search(runtime.list_coordinator.async_call_tool, panel.recipe)
+        await display.async_search_settled()
+    if panel.recipe and not panel.match_id:
+        if panel.search_error:
+            raise HomeAssistantError(panel.search_error)
+        if not panel.matches:
+            raise ServiceValidationError(f"weReci found nothing for “{panel.recipe}”")
+        raise ServiceValidationError(
+            f"“{panel.recipe}” fits more than one recipe — pick one under Matches"
+        )
     await async_start_cook(
         hass,
         runtime,
         {
             "entity_id": panel.screen,
             "without_phone": panel.without_phone,
-            **({key: panel.recipe} if panel.recipe else {}),
+            **({"recipe_id": panel.match_id} if panel.match_id else {}),
         },
     )
 

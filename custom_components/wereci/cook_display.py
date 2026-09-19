@@ -39,7 +39,7 @@ from .const import (
     TOOL_GET_RECIPE,
     TOOL_SEARCH_RECIPES,
 )
-from .panel import PanelChoice
+from .panel import RECIPE_ID, Match, PanelChoice
 from .sender import HaSender
 
 _LOGGER = logging.getLogger(__name__)
@@ -96,6 +96,64 @@ class CookDisplay:
         self._task: asyncio.Task[None] | None = None
         self._listeners: list[Callable[[], None]] = []
         self.panel = PanelChoice()
+        self._search: asyncio.Task[None] | None = None
+
+    # ── the panel's search ─────────────────────────────────────────────────
+
+    @callback
+    def async_search(
+        self, call_tool: Callable[[str, dict[str, Any]], Any], query: str
+    ) -> None:
+        """Typed words → matches, in the background; the entities follow along.
+
+        A search takes seconds, so the text box does not wait for it. An id
+        needs no search: it is the pick.
+        """
+        if self._search is not None:
+            self._search.cancel()
+            self._search = None
+        panel = self.panel
+        is_id = bool(RECIPE_ID.match(query))
+        panel.recipe = query
+        panel.matches, panel.search_error = [], None
+        panel.match_id = query if is_id else None
+        panel.searched = None
+        panel.searching = bool(query) and not is_id
+        self._notify()
+        if panel.searching:
+            self._search = self._entry.async_create_background_task(
+                self.hass, self._async_run_search(call_tool, query), f"{DOMAIN} search"
+            )
+
+    async def _async_run_search(
+        self, call_tool: Callable[[str, dict[str, Any]], Any], query: str
+    ) -> None:
+        panel = self.panel
+        try:
+            panel.matches = await search_matches(call_tool, query)
+        except HomeAssistantError as err:
+            panel.search_error = str(err)
+        # Cancelled (newer words were typed): that search owns the panel now.
+        panel.searched, panel.searching = query, False
+        # Pre-pick only when the words name one recipe. A vague word ("pasta")
+        # fits several titles: that choice is the user's.
+        named = [m for m in panel.matches if resembles(query, m.title)]
+        exact = [m for m in named if m.title.strip().lower() == query.lower()]
+        panel.match_id = (
+            exact[0].id if exact else named[0].id if len(named) == 1 else None
+        )
+        self._notify()
+
+    async def async_search_settled(self) -> None:
+        """Wait out a search that is still running."""
+        if self._search is not None and not self._search.done():
+            await asyncio.wait([self._search])
+
+    @callback
+    def async_pick(self, recipe_id: str | None) -> None:
+        """Choose one of the matches."""
+        self.panel.match_id = recipe_id
+        self._notify()
 
     # ── state the entities read ────────────────────────────────────────────
 
@@ -421,6 +479,36 @@ def _words(text: str) -> list[str]:
     return [w for w in _WORD.findall(text.casefold()) if w not in _FILLER]
 
 
+MAX_MATCHES = 8
+
+
+def cookable_hits(found: dict[str, Any]) -> list[dict[str, Any]]:
+    """Search hits that are recipes. `reference` hits are encyclopedia cards."""
+    return [
+        h
+        for h in found.get("hits") or []
+        if isinstance(h, dict) and h.get("id") and not h.get("reference")
+    ]
+
+
+async def search_matches(
+    call_tool: Callable[[str, dict[str, Any]], Any], query: str
+) -> list[Match]:
+    """The panel's search: what weReci has for these words, nearest first."""
+    found = await call_tool(
+        TOOL_SEARCH_RECIPES, {"query": query, "limit": MAX_MATCHES}
+    )
+    return [
+        Match(
+            str(h["id"]),
+            str(h.get("title") or "Untitled"),
+            h.get("cuisine") or None,
+            h.get("cookbook") or None,
+        )
+        for h in cookable_hits(found)
+    ]
+
+
 def resembles(query: str, title: str) -> bool:
     """Does this title look like what was asked for?
 
@@ -450,12 +538,7 @@ async def resolve_recipe(
         raise ServiceValidationError("Give recipe_id or recipe, not both")
     if query:
         found = await call_tool(TOOL_SEARCH_RECIPES, {"query": query, "limit": 5})
-        # `reference` hits are encyclopedia cards, not something to cook.
-        hits = [
-            h
-            for h in found.get("hits") or []
-            if isinstance(h, dict) and h.get("id") and not h.get("reference")
-        ]
+        hits = cookable_hits(found)
         hit = next(
             (
                 h

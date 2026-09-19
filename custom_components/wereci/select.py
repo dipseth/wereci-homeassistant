@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import Event, HomeAssistant, callback
@@ -19,8 +21,11 @@ async def async_setup_entry(
     entry: WereciConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the screen picker."""
-    async_add_entities([ScreenSelect(entry.runtime_data.cook_display, entry, "screen")])
+    """Add the screen picker and the recipe matches."""
+    display = entry.runtime_data.cook_display
+    async_add_entities(
+        [ScreenSelect(display, entry, "screen"), MatchSelect(display, entry, "matches")]
+    )
 
 
 class ScreenSelect(CookDisplayEntity, SelectEntity, RestoreEntity):
@@ -70,3 +75,45 @@ class ScreenSelect(CookDisplayEntity, SelectEntity, RestoreEntity):
         self.async_on_remove(
             self.hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, refresh)
         )
+
+
+class MatchSelect(CookDisplayEntity, SelectEntity):
+    """What weReci found for the recipe box's words; the pick is what Start cooks.
+
+    Not restored: a restart forgets the matches, and Start searches again.
+    """
+
+    _attr_icon = "mdi:text-search"
+
+    @property
+    def options(self) -> list[str]:
+        """The matches, nearest first."""
+        return list(self._display.panel.labels())
+
+    @property
+    def current_option(self) -> str | None:
+        """The picked match. None: nothing is, and Start will ask for one."""
+        panel = self._display.panel
+        return next(
+            (label for label, rid in panel.labels().items() if rid == panel.match_id),
+            None,
+        )
+
+    async def async_select_option(self, option: str) -> None:
+        """Pick a match."""
+        self._display.async_pick(self._display.panel.labels()[option])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """The search behind the options — enough for a card to draw it."""
+        panel = self._display.panel
+        return {
+            "query": panel.recipe,
+            "searching": panel.searching,
+            "error": panel.search_error,
+            "recipe_id": panel.match_id,
+            "matches": [
+                {"id": m.id, "title": m.title, "cuisine": m.cuisine, "cookbook": m.cookbook}
+                for m in panel.matches
+            ],
+        }

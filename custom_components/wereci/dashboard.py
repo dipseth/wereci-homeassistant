@@ -97,8 +97,22 @@ class CookDashboard(dashboard.LovelaceConfig):
             "## Waiting for a phone\nOpen Cook Mode and enter "
             "**{{ state_attr(s, 'code') }}**."
             "{% else %}"
-            "## Nothing is cooking\nType a recipe above, pick a screen, press "
-            "**Start cooking**."
+            f"{{% set m = '{entity('select', 'matches')}' %}}"
+            "## Nothing is cooking\n"
+            "{% if state_attr(m, 'searching') %}"
+            "Searching weReci for **{{ state_attr(m, 'query') }}**…"
+            "{% elif state_attr(m, 'error') %}"
+            "{{ state_attr(m, 'error') }}"
+            "{% elif state_attr(m, 'recipe_id') %}"
+            "Ready: **{{ states(m) }}**. Pick a screen and press **Start cooking**."
+            "{% elif state_attr(m, 'matches') %}"
+            "{{ state_attr(m, 'matches') | count }} recipes fit "
+            "**{{ state_attr(m, 'query') }}** — pick one under **Matches**."
+            "{% elif state_attr(m, 'query') %}"
+            "Nothing found for **{{ state_attr(m, 'query') }}** yet — try other words."
+            "{% else %}"
+            "Type what you want to cook under **Recipe**."
+            "{% endif %}"
             "{% endif %}"
         )
         ingredients = (
@@ -119,6 +133,7 @@ class CookDashboard(dashboard.LovelaceConfig):
                         e
                         for e in (
                             entity("text", "recipe"),
+                            entity("select", "matches"),
                             entity("select", "screen"),
                             entity("switch", "without_phone"),
                             entity("button", "start_cooking"),

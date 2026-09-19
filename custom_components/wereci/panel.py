@@ -6,7 +6,8 @@ the same call `wereci.show_cook_display` does.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import re
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -16,13 +17,45 @@ from homeassistant.helpers import entity_registry as er
 SCREEN_PLATFORMS = ("cast", "androidtv", "androidtv_remote")
 
 
+# A weReci recipe id, typed or pasted in place of a name.
+RECIPE_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{18,}$", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class Match:
+    """One recipe the search found."""
+
+    id: str
+    title: str
+    cuisine: str | None = None
+    cookbook: str | None = None
+
+
 @dataclass
 class PanelChoice:
     """What the panel's Start button will cook, and where."""
 
-    recipe: str = ""
+    recipe: str = ""  # what was typed: words to search for, or an id
     screen: str | None = None  # entity_id
     without_phone: bool = True
+    # The search the typed words started, and what came of it.
+    searched: str | None = None  # the words `matches` answer; None = not yet
+    searching: bool = False
+    search_error: str | None = None
+    matches: list[Match] = field(default_factory=list)
+    match_id: str | None = None  # the pick — what Start cooks
+
+    def labels(self) -> dict[str, str]:
+        """Label → recipe id, for a dropdown. Twin titles are told apart."""
+        found: dict[str, str] = {}
+        for m in self.matches:
+            label = m.title
+            if label in found:
+                label = f"{m.title} ({m.cookbook or m.cuisine or m.id[:8]})"
+            if label in found:
+                label = f"{m.title} ({m.id[:8]})"
+            found[label] = m.id
+        return found
 
 
 def screens(hass: HomeAssistant) -> dict[str, str]:
