@@ -24,6 +24,7 @@ from .const import (
     MY_REDIRECT_URI,
     OAUTH_DISCOVERY_PATH,
     SCOPES,
+    TOOL_TIMEOUT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -142,7 +143,11 @@ async def mcp_session(
         async with (
             streamable_http_client(
                 url=url,
-                http_client=create_async_httpx_client(hass, headers=headers),
+                # httpx's own default is 5s a read — a recipe search on a cold
+                # weReci takes longer. The callers' asyncio.timeout is the limit.
+                http_client=create_async_httpx_client(
+                    hass, headers=headers, timeout=httpx.Timeout(TOOL_TIMEOUT, connect=10)
+                ),
             ) as (read_stream, write_stream, _),
             ClientSession(read_stream, write_stream) as session,
         ):

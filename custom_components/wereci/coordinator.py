@@ -23,6 +23,7 @@ from .const import (
     DOMAIN,
     LIST_POLL_INTERVAL,
     LIST_TIMEOUT,
+    TOOL_TIMEOUT,
     TOOL_GET_LIST,
     TOOL_UPDATE_LIST,
 )
@@ -110,8 +111,10 @@ class WereciListCoordinator(DataUpdateCoordinator[ListState]):
         self._token_manager = token_manager
 
     async def _call(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
+        # A search or a whole recipe is slower than the list's seq check.
+        is_list = tool in (TOOL_GET_LIST, TOOL_UPDATE_LIST)
         try:
-            async with asyncio.timeout(LIST_TIMEOUT):
+            async with asyncio.timeout(LIST_TIMEOUT if is_list else TOOL_TIMEOUT):
                 async with mcp_session(self.hass, self._url, self._token_manager) as s:
                     return tool_json(await s.call_tool(tool, args))
         except OAuth2TokenRequestReauthError as err:
