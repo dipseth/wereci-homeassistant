@@ -18,7 +18,6 @@ from homeassistant.helpers import config_validation as cv, intent
 
 from .const import (
     DEFAULT_DASHBOARD_PATH,
-    DEFAULT_VIEW_PATH,
     DOMAIN,
     INTENT_NEXT_STEP,
     INTENT_PREVIOUS_STEP,
@@ -35,7 +34,7 @@ SHOW_SCHEMA = vol.Schema(
         vol.Optional("browser_id"): cv.string,
         vol.Optional("notify"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("dashboard_path", default=DEFAULT_DASHBOARD_PATH): cv.string,
-        vol.Optional("view_path", default=DEFAULT_VIEW_PATH): cv.string,
+        vol.Optional("view_path"): cv.string,
         vol.Optional("return_path", default="/"): cv.string,
         **_ENTRY,
     }
@@ -92,7 +91,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return await display.async_show(
             target,
             dashboard_path=data["dashboard_path"],
-            view_path=data["view_path"],
+            view_path=data.get("view_path") or display.view_path,
             notify=data.get("notify"),
         )
 

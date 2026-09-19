@@ -7,7 +7,8 @@
   "config_flow": true,
   "dependencies": [
     "auth",
-    "http"
+    "http",
+    "lovelace"
   ],
   "documentation": "https://github.com/dipseth/wereci-homeassistant",
   "integration_type": "service",
@@ -16,5 +17,5 @@
   "requirements": [
     "mcp>=1.26.0"
   ],
-  "version": "0.2.0"
+  "version": "0.2.1"
 }

@@ -72,11 +72,11 @@
         },
         "dashboard_path": {
           "name": "Dashboard path",
-          "description": "Dashboard holding the webpage card (Cast and browser_mod targets)."
+          "description": "Only if you built your own dashboard for the display. Default: the one weReci provides."
         },
         "view_path": {
           "name": "View path",
-          "description": "View holding the webpage card."
+          "description": "Only with your own dashboard: the view holding the webpage card."
         },
         "return_path": {
           "name": "Return path",

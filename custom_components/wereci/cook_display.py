@@ -100,6 +100,11 @@ class CookDisplay:
         return f"/api/{DOMAIN}/display/{self._entry.data[CONF_DISPLAY_SECRET]}"
 
     @property
+    def view_path(self) -> str:
+        """This account's view in the generated dashboard."""
+        return f"display-{self._entry.entry_id.lower()}"
+
+    @property
     def receiver_url(self) -> str | None:
         """The live receiver URL. Holds the token — never log it."""
         if self._session is None:

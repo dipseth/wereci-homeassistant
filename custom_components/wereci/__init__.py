@@ -25,6 +25,7 @@ from .const import (
 )
 from .cook_display import CookDisplay, CookDisplayView, ensure_display_secret
 from .coordinator import WereciConfigEntry, WereciListCoordinator, WereciRuntime
+from .dashboard import async_setup_dashboard
 from .llm_api import WereciAPI, WereciToolsCoordinator
 from .services import async_setup_services
 
@@ -37,6 +38,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register what is not tied to one account: services, intents, the view."""
     async_setup_services(hass)
     hass.http.register_view(CookDisplayView())
+    hass.data[DOMAIN] = async_setup_dashboard(hass)
     return True
 
 
@@ -85,7 +87,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bo
     cook_display = CookDisplay(hass, entry, entry.data[CONF_BASE_URL])
     entry.runtime_data = WereciRuntime(list_coordinator, tools_coordinator, cook_display)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _dashboard_changed(hass)
+    entry.async_on_unload(lambda: _dashboard_changed(hass))
     return True
+
+
+def _dashboard_changed(hass: HomeAssistant) -> None:
+    if (cook_dashboard := hass.data.get(DOMAIN)) is not None:
+        cook_dashboard.async_accounts_changed()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bool:

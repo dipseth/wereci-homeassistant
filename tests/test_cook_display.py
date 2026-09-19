@@ -106,7 +106,7 @@ async def test_show_casts_the_view_and_hands_the_code_to_the_phone(
     assert shown[0].data == {
         "entity_id": "media_player.hub",
         "dashboard_path": "wereci-cook",
-        "view_path": "display",
+        "view_path": f"display-{entry.entry_id.lower()}",
     }
     assert phone[0].data["data"]["url"] == "https://wereci.xyz/?cast=ABCDEF"
     assert not other  # only mobile apps by default
@@ -208,3 +208,34 @@ async def test_display_path_redirects_only_while_a_session_is_open(
     )
     wrong = await client.get("/api/wereci/display/nope", allow_redirects=False)
     assert wrong.status == 200
+
+
+async def test_the_dashboard_comes_with_the_integration(
+    hass: HomeAssistant, entry, list_call, relay, hass_ws_client
+) -> None:
+    """Nobody builds a dashboard by hand: the view show_cook_display targets exists."""
+    hass.config.external_url = "https://ha.example.test"
+    await _setup(hass, entry)
+    ws = await hass_ws_client(hass)
+    await ws.send_json({"id": 1, "type": "lovelace/config", "url_path": "wereci-cook"})
+    config = (await ws.receive_json())["result"]
+
+    path = hass.states.get(SENSOR).attributes["display_path"]
+    assert config["views"] == [
+        {
+            "path": f"display-{entry.entry_id.lower()}",
+            "title": "Cook display (cook@example.test)",
+            "panel": True,
+            "cards": [
+                {
+                    "type": "iframe",
+                    # Absolute: HA's Cast receiver lives on another origin.
+                    "url": f"https://ha.example.test{path}",
+                    "aspect_ratio": "56%",
+                }
+            ],
+        }
+    ]
+    panel = hass.data["frontend_panels"]["wereci-cook"]
+    assert panel.config == {"mode": "yaml"}
+    assert panel.to_response()["show_in_sidebar"] is False

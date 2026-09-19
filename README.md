@@ -80,20 +80,14 @@ data:
 
 | Target | How it is shown | Needs |
 |---|---|---|
-| Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | the dashboard below; Home Assistant reachable over **https** |
-| `browser_mod` browser | `browser_mod.navigate` | the dashboard below; [browser_mod](https://github.com/thomasloven/hass-browser_mod) |
+| Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | Home Assistant reachable over **https** (Nabu Casa or your own domain) |
+| `browser_mod` browser | `browser_mod.navigate` | [browser_mod](https://github.com/thomasloven/hass-browser_mod) |
 | Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
 | Android TV Remote | `media_player.play_media` (url) | nothing else |
 
-**The dashboard** (Cast and browser_mod only): create a dashboard with URL `wereci-cook`, and in it a **panel** view with path `display` holding one webpage card. Its URL is the `display_path` attribute of `sensor.…_cooking` — a local address that forwards to whichever cook display is live:
+There is no dashboard to build. Cast devices and browser_mod browsers are shown a dashboard view, and the integration provides it: a read-only dashboard at `/wereci-cook`, hidden from the sidebar, with one full-screen webpage card per account. That card points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
 
-```yaml
-type: iframe
-url: /api/wereci/display/…   # copy from the sensor's display_path attribute
-aspect_ratio: 56%
-```
-
-Other names work — pass `dashboard_path` / `view_path` to the service. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+Rather lay it out yourself? Put a webpage card on `display_path` in any dashboard and pass `dashboard_path` / `view_path` to the service. A dashboard of your own at `/wereci-cook` is left alone.
 
 `wereci.stop_cook_display` closes it and gives the screen back; closing Cook Mode on the phone does the same.
 

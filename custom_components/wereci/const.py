@@ -38,7 +38,6 @@ CAST_REQUEST_TIMEOUT = 12
 # The relay holds a poll ~25s; clear that with margin.
 CAST_POLL_TIMEOUT = 35
 DEFAULT_DASHBOARD_PATH = "wereci-cook"
-DEFAULT_VIEW_PATH = "display"
 
 SERVICE_SHOW_COOK_DISPLAY = "show_cook_display"
 SERVICE_STOP_COOK_DISPLAY = "stop_cook_display"

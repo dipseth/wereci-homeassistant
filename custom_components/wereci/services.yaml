@@ -19,7 +19,6 @@ show_cook_display:
       selector:
         text:
     view_path:
-      default: display
       selector:
         text:
     return_path:
