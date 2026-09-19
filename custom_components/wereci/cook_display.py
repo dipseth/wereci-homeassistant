@@ -38,6 +38,7 @@ from .const import (
     TOOL_GET_RECIPE,
     TOOL_SEARCH_RECIPES,
 )
+from .sender import HaSender
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class CookSession:
     token: str
     target: DisplayTarget
     recipe: Recipe | None = None
+    sender: HaSender | None = None
     paired: bool = False
     snapshot: dict[str, Any] | None = None
     version: int = 0
@@ -105,6 +107,11 @@ class CookDisplay:
         if self._session is None:
             return STATUS_IDLE
         return STATUS_COOKING if self._session.snapshot else STATUS_WAITING
+
+    @property
+    def base_url(self) -> str:
+        """The weReci site this account lives on."""
+        return self._base_url
 
     @property
     def display_path(self) -> str:
@@ -178,15 +185,25 @@ class CookDisplay:
         view_path: str,
         notify: list[str] | None,
         recipe: Recipe | None = None,
+        sender: HaSender | None = None,
     ) -> dict[str, str]:
         """Open a channel, put the receiver on `target`, hand the code over."""
         if self._session is not None:
             await self.async_stop()
         code, token = await self._open_channel()
         self._session = CookSession(
-            code=code, token=token, target=target, recipe=recipe
+            code=code, token=token, target=target, recipe=recipe, sender=sender
         )
         try:
+            if sender is not None:
+                # Paired and on step 1 before the screen even loads, so the
+                # receiver never shows a code nobody is going to type.
+                await sender.async_start(
+                    code,
+                    lambda coro: self._entry.async_create_background_task(
+                        self.hass, coro, f"{DOMAIN} cook sender"
+                    ),
+                )
             await self._put_on_screen(target, dashboard_path, view_path)
         except Exception:
             await self.async_stop(restore=False)
@@ -195,7 +212,8 @@ class CookDisplay:
             self.hass, self._poll(self._session), f"{DOMAIN} cook display"
         )
         self._notify()
-        await self._notify_phones(notify)
+        if sender is None:
+            await self._notify_phones(notify)
         shown = {"code": code, "link": self.pair_link or ""}
         if recipe is not None:
             shown.update(recipe_id=recipe.id, title=recipe.title)
@@ -322,6 +340,8 @@ class CookDisplay:
                 # The phone hung up, or nobody paired before the code expired.
                 if self._session is session:
                     self._session = None
+                    if session.sender is not None:
+                        session.sender.stop()
                     self._notify()
                     await self._restore_screen(session.target)
                 return
@@ -367,6 +387,8 @@ class CookDisplay:
     async def async_stop(self, *, restore: bool = True) -> None:
         """Close the channel and give the screen back."""
         session, self._session = self._session, None
+        if session is not None and session.sender is not None:
+            session.sender.stop()
         if self._task is not None:
             self._task.cancel()
             self._task = None
@@ -413,6 +435,22 @@ async def resolve_recipe(
             raise ServiceValidationError(f"weReci has no recipe {recipe_id}")
         return Recipe(recipe_id, str(got.get("title") or "your recipe"))
     return None
+
+
+async def resolve_sender(
+    hass: HomeAssistant,
+    call_tool: Callable[[str, dict[str, Any]], Any],
+    base_url: str,
+    recipe: Recipe | None,
+) -> HaSender:
+    """without_phone: fetch the whole recipe; Home Assistant will run the cook."""
+    if recipe is None:
+        raise ServiceValidationError("without_phone needs a recipe or recipe_id")
+    got = await call_tool(TOOL_GET_RECIPE, {"id": recipe.id})
+    sender = HaSender(hass, base_url.rstrip("/"), got, lambda: None)
+    if got.get("error") or not sender.has_steps:
+        raise ServiceValidationError(f"{recipe.title} has no steps to cook through")
+    return sender
 
 
 def resolve_target(

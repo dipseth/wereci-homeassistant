@@ -40,6 +40,7 @@ class CookingSensor(CookDisplayEntity, SensorEntity):
         session = self._display.session
         if session is None:
             return attrs
+        attrs["driven_by"] = "home_assistant" if session.sender else "phone"
         if session.recipe:
             attrs["recipe_id"] = session.recipe.id
         if not session.paired:
@@ -55,5 +56,10 @@ class CookingSensor(CookDisplayEntity, SensorEntity):
                 step_text=snap.get("stepText"),
                 component=snap.get("componentLabel"),
                 scale=snap.get("scaleLabel"),
+                ingredients=[
+                    {"text": i.get("text"), "checked": bool(i.get("checked"))}
+                    for i in snap.get("allIngredients") or []
+                    if isinstance(i, dict)
+                ],
             )
         return attrs

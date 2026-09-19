@@ -93,6 +93,10 @@
         "recipe_id": {
           "name": "Recipe ID",
           "description": "A recipe to open, by its weReci id (as the recipe tools return it). Use instead of a name."
+        },
+        "without_phone": {
+          "name": "Without a phone",
+          "description": "Home Assistant runs the cook itself: no phone, no notification. Needs a recipe. The recipe is cooked as written — scaling, Break it down and swaps stay in the weReci app."
         }
       }
     },
@@ -100,6 +104,20 @@
       "name": "Stop cook display",
       "description": "Close the cook display and give the screen back.",
       "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Which weReci account, if more than one is set up."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Tick ingredient",
+      "description": "Tick or untick one ingredient on the cook display.",
+      "fields": {
+        "index": {
+          "name": "Index",
+          "description": "Position in the sensor's ingredients list, starting at 0."
+        },
         "config_entry_id": {
           "name": "Account",
           "description": "Which weReci account, if more than one is set up."

@@ -1,9 +1,12 @@
-"""The dashboard the cook display is shown through — provided, not hand-built.
+"""The weReci dashboard — provided, not hand-built.
 
-Cast devices and browser_mod browsers are shown a Lovelace view, so there has
-to be one. The integration registers it: one panel view per account, holding a
-single webpage card on that account's `display_path`. It is generated on every
-load (nothing is stored), read-only, and kept out of the sidebar.
+Two views per account, generated on every load (nothing is stored, read-only):
+
+- a control panel: what is cooking, step buttons, the ingredient list, stop,
+  and a live copy of the screen that takes taps like the screen itself;
+- the display view Cast devices and browser_mod browsers are shown: a single
+  full-screen webpage card on `display_path`. Hidden from the tabs; reached
+  by path.
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ from homeassistant.components import frontend
 from homeassistant.components.lovelace import dashboard
 from homeassistant.components.lovelace.const import LOVELACE_DATA, MODE_YAML
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.json import json_bytes, json_fragment
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
@@ -43,22 +47,93 @@ class CookDashboard(dashboard.LovelaceConfig):
             base = get_url(self.hass, prefer_external=True)
         except NoURLAvailableError:
             base = ""
-        return {
-            "title": "weReci",
-            "views": [
+        views: list[dict[str, Any]] = []
+        for entry in self.hass.config_entries.async_loaded_entries(DOMAIN):
+            display = entry.runtime_data.cook_display
+            url = base + display.display_path
+            views.append(self._control_view(entry, url))
+            views.append(
                 {
-                    "path": entry.runtime_data.cook_display.view_path,
+                    "path": display.view_path,
                     "title": f"Cook display ({entry.title})",
+                    "visible": False,
                     "panel": True,
+                    "cards": [{"type": "iframe", "url": url, "aspect_ratio": "56%"}],
+                }
+            )
+        return {"title": "weReci", "views": views}
+
+    def _control_view(self, entry: Any, display_url: str) -> dict[str, Any]:
+        reg = er.async_get(self.hass)
+
+        def entity(platform: str, key: str) -> str | None:
+            return reg.async_get_entity_id(platform, DOMAIN, f"{entry.unique_id}_{key}")
+
+        sensor = entity("sensor", "cooking")
+        def press(key: str) -> dict[str, Any]:
+            return {
+                "action": "perform-action",
+                "perform_action": "button.press",
+                "target": {"entity_id": entity("button", key)},
+            }
+
+        now = (
+            f"{{% set s = '{sensor}' %}}"
+            "{% if is_state(s, 'cooking') %}"
+            "## {{ state_attr(s, 'title') }}\n"
+            "**Step {{ state_attr(s, 'step') }} of {{ state_attr(s, 'total_steps') }}**"
+            "\n\n{{ state_attr(s, 'step_text') }}"
+            "{% elif is_state(s, 'waiting') %}"
+            "## Waiting for a phone\nOpen Cook Mode and enter "
+            "**{{ state_attr(s, 'code') }}**."
+            "{% else %}"
+            "## Nothing is cooking\nStart with the **weReci: Show cook display** "
+            "action — add a recipe and *Without a phone* to cook from here."
+            "{% endif %}"
+        )
+        ingredients = (
+            f"{{% set s = '{sensor}' %}}"
+            "{% for i in state_attr(s, 'ingredients') or [] %}"
+            "{{ '✅' if i.checked else '⬜' }} {{ i.text }}\n"
+            "{% endfor %}"
+        )
+        return {
+            "path": f"control-{entry.entry_id.lower()}",
+            "title": entry.title,
+            "icon": "mdi:chef-hat",
+            "cards": [
+                {"type": "markdown", "content": now},
+                {
+                    "type": "horizontal-stack",
                     "cards": [
                         {
-                            "type": "iframe",
-                            "url": base + entry.runtime_data.cook_display.display_path,
-                            "aspect_ratio": "56%",
-                        }
+                            "type": "button",
+                            "name": "Previous step",
+                            "icon": "mdi:chevron-left",
+                            "tap_action": press("previous_step"),
+                        },
+                        {
+                            "type": "button",
+                            "name": "Next step",
+                            "icon": "mdi:chevron-right",
+                            "tap_action": press("next_step"),
+                        },
+                        {
+                            "type": "button",
+                            "name": "Stop",
+                            "icon": "mdi:stop-circle-outline",
+                            "tap_action": {
+                                "action": "perform-action",
+                                "perform_action": f"{DOMAIN}.stop_cook_display",
+                                "data": {"config_entry_id": entry.entry_id},
+                            },
+                        },
                     ],
-                }
-                for entry in self.hass.config_entries.async_loaded_entries(DOMAIN)
+                },
+                # The receiver itself: reads are idempotent, so a second copy
+                # of the screen is free — and it takes taps like the screen.
+                {"type": "iframe", "url": display_url, "aspect_ratio": "56%"},
+                {"type": "markdown", "title": "Ingredients", "content": ingredients},
             ],
         }
 
@@ -99,10 +174,10 @@ def async_setup_dashboard(hass: HomeAssistant) -> CookDashboard | None:
         hass,
         "lovelace",
         frontend_url_path=DEFAULT_DASHBOARD_PATH,
-        sidebar_title="weReci cook display",
+        sidebar_title="weReci",
         sidebar_icon="mdi:chef-hat",
         require_admin=False,
-        show_in_sidebar=False,
+        show_in_sidebar=True,
         config={"mode": MODE_YAML},
     )
     return cook

@@ -89,6 +89,18 @@ data:
 
 An assistant with the weReci tools can do the same after a search: “find me a soup, and put it on the kitchen display.”
 
+**Cook with no phone at all.** Add `without_phone: true` and Home Assistant runs the cook itself: it fetches the recipe, puts step 1 on the screen, and answers every tap on the screen, the step buttons and voice. No notification is sent.
+
+```yaml
+action: wereci.show_cook_display
+data:
+  entity_id: media_player.kitchen_display
+  recipe: carrot soup
+  without_phone: true
+```
+
+The recipe is cooked as written. Scaling, Break it down and ingredient swaps run in the weReci app, so the screen doesn't offer them here — start from your phone when you want those.
+
 | Target | How it is shown | Needs |
 |---|---|---|
 | Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | Home Assistant reachable over **https** (Nabu Casa or your own domain) |
@@ -96,13 +108,13 @@ An assistant with the weReci tools can do the same after a search: “find me a 
 | Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
 | Android TV Remote | `media_player.play_media` (url) | nothing else |
 
-There is no dashboard to build. Cast devices and browser_mod browsers are shown a dashboard view, and the integration provides it: a read-only dashboard at `/wereci-cook`, hidden from the sidebar, with one full-screen webpage card per account. That card points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+**The weReci dashboard** appears in the sidebar by itself — there is nothing to build. Its control panel shows what is cooking, has previous / next / stop buttons, the ingredient list, and a live copy of the screen that takes taps just like the screen does. The same dashboard holds the hidden full-screen view that Cast devices and browser_mod browsers are shown; it points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
 
 Rather lay it out yourself? Put a webpage card on `display_path` in any dashboard and pass `dashboard_path` / `view_path` to the service. A dashboard of your own at `/wereci-cook` is left alone.
 
 `wereci.stop_cook_display` closes it and gives the screen back; closing Cook Mode on the phone does the same.
 
-**Entities:** `sensor.…_cooking` is `idle` / `waiting` / `cooking`, with `title`, `step`, `total_steps` and `step_text` (and `code` + `link` while waiting — handy for an NFC tag automation). `button.…_next_step` and `button.…_previous_step` work while cooking.
+**Entities:** `sensor.…_cooking` is `idle` / `waiting` / `cooking`, with `title`, `step`, `total_steps` and `step_text` (and `code` + `link` while waiting — handy for an NFC tag automation). `button.…_next_step` and `button.…_previous_step` work while cooking, and `wereci.toggle_ingredient` (`index`, from the sensor's `ingredients` list) ticks one off. `driven_by` says whether a phone or Home Assistant is running the cook.
 
 **Voice, without an LLM:** add `config/custom_sentences/en/wereci.yaml`:
 

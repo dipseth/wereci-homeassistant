@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import json as jsonlib
 from unittest.mock import patch
 
 import pytest
@@ -14,6 +15,7 @@ from homeassistant.helpers import entity_registry as er, intent
 SENSOR = "sensor.wereci_cook_example_test_cooking"
 NEXT = "button.wereci_cook_example_test_next_step"
 TOKEN = "rt-secret-token-0123456789"
+SENDER = "sender-token-0123456789"
 SNAPSHOT = {
     "title": "Carrot soup",
     "stepIdx": 1,
@@ -42,15 +44,36 @@ class FakeRelay:
     def __init__(self) -> None:
         self.polls: asyncio.Queue[_Res] = asyncio.Queue()
         self.commands: list[dict] = []
+        self.pushed: list[dict] = []
+        self.to_sender: asyncio.Queue[_Res] = asyncio.Queue()
         self.deleted: list[str] = []
 
     async def post(self, url: str, json: dict | None = None, **_) -> _Res:
         if url.endswith("/channel"):
             return _Res(200, {"code": "ABCDEF", "token": TOKEN})
+        if url.endswith("/pair"):
+            assert json == {"code": "ABCDEF"}
+            return _Res(200, {"token": SENDER})
+        if url.endswith("/state"):
+            # What a sender pushes is what the display side then reads.
+            assert json["token"] == SENDER
+            self.pushed.append(jsonlib.loads(json["state"]))
+            self.polls.put_nowait(
+                _Res(200, {"version": len(self.pushed), "paired": True,
+                           "state": json["state"]})
+            )
+            return _Res(200, {"ok": True})
         self.commands.append(json)
+        self.to_sender.put_nowait(
+            _Res(200, {"version": len(self.commands),
+                       "commands": [{"v": len(self.commands), "cmd": json["cmd"]}]})
+        )
         return _Res(200, {"ok": True})
 
     async def get(self, url: str, params: dict, **_) -> _Res:
+        if url.endswith("/command"):
+            assert params["token"] == SENDER
+            return await self.to_sender.get()
         assert params["token"] == TOKEN
         return await self.polls.get()
 
@@ -62,8 +85,9 @@ class FakeRelay:
 @pytest.fixture
 async def relay(hass: HomeAssistant):
     fake = FakeRelay()
-    with patch(
-        "custom_components.wereci.cook_display.get_async_client", return_value=fake
+    with (
+        patch("custom_components.wereci.cook_display.get_async_client", return_value=fake),
+        patch("custom_components.wereci.sender.get_async_client", return_value=fake),
     ):
         yield fake
         # Hang up while the relay is still the fake one; unload would
@@ -221,24 +245,25 @@ async def test_the_dashboard_comes_with_the_integration(
     config = (await ws.receive_json())["result"]
 
     path = hass.states.get(SENSOR).attributes["display_path"]
-    assert config["views"] == [
-        {
-            "path": f"display-{entry.entry_id.lower()}",
-            "title": "Cook display (cook@example.test)",
-            "panel": True,
-            "cards": [
-                {
-                    "type": "iframe",
-                    # Absolute: HA's Cast receiver lives on another origin.
-                    "url": f"https://ha.example.test{path}",
-                    "aspect_ratio": "56%",
-                }
-            ],
-        }
-    ]
+    control, display = config["views"]
+    assert display == {
+        "path": f"display-{entry.entry_id.lower()}",
+        "title": "Cook display (cook@example.test)",
+        "visible": False,
+        "panel": True,
+        # Absolute: HA's Cast receiver lives on another origin.
+        "cards": [
+            {"type": "iframe", "url": f"https://ha.example.test{path}",
+             "aspect_ratio": "56%"}
+        ],
+    }
+    # The control panel drives the real entities.
+    nxt = control["cards"][1]["cards"][1]["tap_action"]
+    assert nxt["target"] == {"entity_id": NEXT}
+    assert SENSOR in control["cards"][0]["content"]
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}
-    assert panel.to_response()["show_in_sidebar"] is False
+    assert panel.to_response()["show_in_sidebar"] is True
 
 
 async def test_a_recipe_makes_the_link_open_cook_mode_on_it(
@@ -274,3 +299,71 @@ async def test_a_recipe_makes_the_link_open_cook_mode_on_it(
     list_call.return_value = {"hits": []}
     with pytest.raises(ServiceValidationError):
         await _show(hass, entity_id=player, recipe="zzz")
+
+
+RECIPE = {
+    "recipe_title": "Carrot soup",
+    "primary_photo_url": "https://wereci.xyz/p.webp",
+    "instructions": ["Sweat the onions.", "Add carrots.", "Blend."],
+    "ingredients": ["1 onion", "500 g carrots"],
+}
+
+
+async def _settle(hass: HomeAssistant) -> None:
+    for _ in range(4):
+        await asyncio.sleep(0)
+        await hass.async_block_till_done()
+
+
+async def test_without_phone_home_assistant_runs_the_cook(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    phone = async_mock_service(hass, "notify", "mobile_app_phone")
+    list_call.return_value = RECIPE
+
+    await _show(hass, entity_id=_cast_player(hass), recipe_id="r-2", without_phone=True)
+    await _settle(hass)
+
+    assert not phone  # nobody to notify
+    first = relay.pushed[0]
+    assert (first["title"], first["stepIdx"], first["stepText"]) == (
+        "Carrot soup", 0, "Sweat the onions."
+    )
+    assert "controls" not in first  # the screen hides what HA cannot do
+    state = hass.states.get(SENSOR)
+    assert (state.state, state.attributes["driven_by"]) == ("cooking", "home_assistant")
+
+    # The button's intent comes back round the relay and HA answers it.
+    await hass.services.async_call("button", "press", {"entity_id": NEXT}, blocking=True)
+    await hass.services.async_call("wereci", "toggle_ingredient", {"index": 1}, blocking=True)
+    await _settle(hass)
+    assert hass.states.get(SENSOR).attributes["step"] == 2
+    assert relay.pushed[-1]["allIngredients"][1]["checked"] is True
+    assert relay.pushed[-1]["labels"]["ready"] == "1 of 2 ready"
+    assert hass.states.get(SENSOR).attributes["ingredients"][1]["checked"] is True
+
+
+async def test_without_phone_needs_a_recipe_with_steps(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    player = _cast_player(hass)
+    with pytest.raises(ServiceValidationError):
+        await _show(hass, entity_id=player, without_phone=True)
+    list_call.return_value = {"recipe_title": "A letter", "instructions": []}
+    with pytest.raises(ServiceValidationError):
+        await _show(hass, entity_id=player, recipe_id="r-9", without_phone=True)
+    assert hass.states.get(SENSOR).state == "idle"
+
+
+def test_sender_clamps_steps_and_ignores_what_it_cannot_do() -> None:
+    from custom_components.wereci.sender import HaSender
+
+    s = HaSender(None, "https://wereci.xyz", RECIPE, lambda: None)
+    assert s.apply({"do": "step", "delta": -1}) is False
+    assert s.apply({"do": "step", "delta": 9}) is True
+    assert s.snapshot()["labels"]["stepOf"] == "Step 3 of 3"
+    assert s.apply({"do": "scale", "factor": 2}) is False
+    assert s.apply({"do": "toggle", "i": 7}) is False

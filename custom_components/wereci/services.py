@@ -23,11 +23,13 @@ from .const import (
     INTENT_PREVIOUS_STEP,
     SERVICE_SHOW_COOK_DISPLAY,
     SERVICE_STOP_COOK_DISPLAY,
+    SERVICE_TOGGLE_INGREDIENT,
 )
 from .cook_display import (
     STATUS_COOKING,
     CookDisplay,
     resolve_recipe,
+    resolve_sender,
     resolve_target,
 )
 
@@ -39,6 +41,7 @@ SHOW_SCHEMA = vol.Schema(
         vol.Optional("browser_id"): cv.string,
         vol.Optional("recipe_id"): cv.string,
         vol.Optional("recipe"): cv.string,
+        vol.Optional("without_phone", default=False): cv.boolean,
         vol.Optional("notify"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("dashboard_path", default=DEFAULT_DASHBOARD_PATH): cv.string,
         vol.Optional("view_path"): cv.string,
@@ -104,12 +107,29 @@ def async_setup_services(hass: HomeAssistant) -> None:
             data.get("recipe_id"),
             data.get("recipe"),
         )
+        runtime = _runtime(hass, call)
+        sender = (
+            await resolve_sender(
+                hass,
+                runtime.list_coordinator.async_call_tool,
+                runtime.cook_display.base_url,
+                recipe,
+            )
+            if data["without_phone"]
+            else None
+        )
         return await display.async_show(
             target,
             recipe=recipe,
+            sender=sender,
             dashboard_path=data["dashboard_path"],
             view_path=data.get("view_path") or display.view_path,
             notify=data.get("notify"),
+        )
+
+    async def toggle(call: ServiceCall) -> None:
+        await _display(hass, call).async_command(
+            {"do": "toggle", "i": call.data["index"]}
         )
 
     async def stop(call: ServiceCall) -> None:
@@ -124,6 +144,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_STOP_COOK_DISPLAY, stop, schema=STOP_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TOGGLE_INGREDIENT,
+        toggle,
+        schema=vol.Schema({vol.Required("index"): cv.positive_int, **_ENTRY}),
     )
     intent.async_register(hass, StepIntent(INTENT_NEXT_STEP, 1))
     intent.async_register(hass, StepIntent(INTENT_PREVIOUS_STEP, -1))

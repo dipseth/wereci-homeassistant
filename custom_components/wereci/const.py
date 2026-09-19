@@ -43,5 +43,6 @@ DEFAULT_DASHBOARD_PATH = "wereci-cook"
 
 SERVICE_SHOW_COOK_DISPLAY = "show_cook_display"
 SERVICE_STOP_COOK_DISPLAY = "stop_cook_display"
+SERVICE_TOGGLE_INGREDIENT = "toggle_ingredient"
 INTENT_NEXT_STEP = "WereciNextStep"
 INTENT_PREVIOUS_STEP = "WereciPreviousStep"

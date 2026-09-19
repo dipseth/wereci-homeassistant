@@ -17,6 +17,10 @@ show_cook_display:
       example: 9c811224-dc73-5052-a3f1-d8e93a4e22da
       selector:
         text:
+    without_phone:
+      default: false
+      selector:
+        boolean:
     notify:
       example: "[notify.mobile_app_my_phone]"
       selector:
@@ -39,6 +43,19 @@ show_cook_display:
           integration: wereci
 stop_cook_display:
   fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: wereci
+toggle_ingredient:
+  fields:
+    index:
+      required: true
+      example: 0
+      selector:
+        number:
+          min: 0
+          mode: box
     config_entry_id:
       selector:
         config_entry:
