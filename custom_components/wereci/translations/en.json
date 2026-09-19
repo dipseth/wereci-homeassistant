@@ -25,7 +25,7 @@
       "user_rejected_authorize": "You declined the connection in weReci."
     },
     "create_entry": {
-      "default": "Connected. Give an Assist agent the weReci tools under its LLM API setting. The shopping list entity shows the list you share in weReci."
+      "default": "Connected. To use the recipe tools by voice or chat: Settings → Voice assistants → your assistant → the gear next to Conversation agent → under Control Home Assistant, tick weReci. The shopping list entity shows the list you share in weReci."
     }
   },
   "entity": {

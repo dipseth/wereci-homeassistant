@@ -48,7 +48,7 @@ Connect your [weReci](https://wereci.xyz) cookbook to Home Assistant. One sign-i
 
 1. In the browser you use for Home Assistant, sign in at [wereci.xyz](https://wereci.xyz) with your account first.
 2. Settings → Devices & services → **Add integration** → **weReci**, and approve the connection. There is no client ID or secret to enter.
-3. For Assist: Settings → Voice assistants → your agent → LLM API → tick **weReci**.
+3. For Assist: Settings → Voice assistants → your assistant → **Conversation agent** → the ⚙️ gear next to it → under **Control Home Assistant**, tick **weReci (your email)**. Leave **Assist** ticked too, so the agent can still control your home.
 
 The entry is named after your weReci email. You can disconnect any time from weReci → Your AI → Connected AI apps.
 
