@@ -60,6 +60,11 @@
         "name": "Start cooking"
       }
     },
+    "image": {
+      "cooking": {
+        "name": "Cooking"
+      }
+    },
     "sensor": {
       "cooking": {
         "name": "Cooking",

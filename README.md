@@ -115,7 +115,43 @@ The "new at this step" ingredient rail is the one thing a phone-driven cook has 
 | Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
 | Android TV Remote | `media_player.play_media` (url) | nothing else |
 
-**The weReci dashboard** appears in the sidebar by itself — there is nothing to build. Start a cook from it: type what you want under **Recipe** (words, or a recipe id) — weReci is searched in the background and **Matches** fills with what it found. Words that name one recipe pick it for you; a vague word (“pasta”) leaves the pick to you. Then pick a screen, choose whether a phone is involved, press **Start cooking**. Building your own card? `select.…_matches` carries the whole search as attributes: `query`, `searching`, `error`, `recipe_id` (the pick) and `matches` (`id`, `title`, `cuisine`, `cookbook`). Below that, its control panel shows what is cooking, has previous / next / stop buttons, the ingredient list, and a live copy of the screen that takes taps just like the screen does. The same dashboard holds the hidden full-screen view that Cast devices and browser_mod browsers are shown; it points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+**The weReci dashboard** appears in the sidebar by itself — there is nothing to build. Start a cook from it: type what you want under **Recipe** (words, or a recipe id) — weReci is searched in the background and **Matches** fills with what it found. Words that name one recipe pick it for you; a vague word (“pasta”) leaves the pick to you. Then pick a screen, choose whether a phone is involved, press **Start cooking**. Building your own card? `select.…_matches` carries the whole search as attributes: `query`, `searching`, `error`, `recipe_id` (the pick) and `matches` (`id`, `title`, `cuisine`, `cookbook`). Below that, its control panel is a picture of what is cooking — the recipe's photo, with previous / next / stop along its foot — then the step's text and the ingredient list. Tap the picture for the live screen, which takes taps just like the screen does (scaling, swaps, Break it down). The same dashboard holds the hidden full-screen view that Cast devices and browser_mod browsers are shown; it points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+
+**A “now cooking” tile for your own dashboard.** `image.…_cooking` is the picture that panel uses: the weReci mark when idle, the pairing code while it waits for a phone, the recipe's photo while cooking (its title, when it has no photo). It is pushed when the recipe changes, not polled. With Home Assistant's stock [picture-glance card](https://www.home-assistant.io/dashboards/picture-glance/) — no iframe, no custom cards, so it also works in the companion apps and on wall tablets — paste this, with your own entity ids:
+
+```yaml
+type: picture-glance
+image_entity: image.wereci_you_example_com_cooking
+aspect_ratio: "16:9"
+tap_action:
+  action: none
+entities:
+  - entity: sensor.wereci_you_example_com_cooking
+    show_state: true
+    tap_action:
+      action: none
+  - entity: button.wereci_you_example_com_previous_step
+    icon: mdi:chevron-left
+    tap_action:
+      action: perform-action
+      perform_action: button.press
+      target:
+        entity_id: button.wereci_you_example_com_previous_step
+  - entity: button.wereci_you_example_com_next_step
+    icon: mdi:chevron-right
+    tap_action:
+      action: perform-action
+      perform_action: button.press
+      target:
+        entity_id: button.wereci_you_example_com_next_step
+  - entity: sensor.wereci_you_example_com_cooking
+    icon: mdi:stop-circle-outline
+    tap_action:
+      action: perform-action
+      perform_action: wereci.stop_cook_display
+```
+
+The card's `title` is fixed text, not a template, so it cannot name the recipe; the step's words are on `sensor.…_cooking` (`title`, `step`, `total_steps`, `step_text`) for a markdown card beside it. The picture is for glancing and stepping — the kitchen screen itself still shows the live receiver.
 
 Don't want it, or the to-do list? **Settings → Devices & services → weReci → the gear on the account** has a checkbox for each: *Shopping list* and *weReci control panel*. Turning the panel off hides the sidebar entry; cook displays keep working.
 

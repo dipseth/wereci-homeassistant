@@ -16,6 +16,7 @@ from homeassistant.helpers import entity_registry as er, intent
 from custom_components.wereci.api import WereciError
 
 SENSOR = "sensor.wereci_cook_example_test_cooking"
+IMAGE = "image.wereci_cook_example_test_cooking"
 NEXT = "button.wereci_cook_example_test_next_step"
 START = "button.wereci_cook_example_test_start_cooking"
 RECIPE_BOX = "text.wereci_cook_example_test_recipe"
@@ -268,9 +269,14 @@ async def test_the_dashboard_comes_with_the_integration(
         ],
     }
     # The control panel drives the real entities.
-    nxt = control["cards"][2]["cards"][1]["tap_action"]
-    assert nxt["target"] == {"entity_id": NEXT}
-    assert SENSOR in control["cards"][1]["content"]
+    glance = control["cards"][1]
+    assert (glance["type"], glance["image_entity"]) == ("picture-glance", IMAGE)
+    assert glance["entities"][2]["tap_action"]["target"] == {"entity_id": NEXT}
+    assert glance["entities"][3]["tap_action"]["perform_action"] == "wereci.stop_cook_display"
+    # The picture takes no receiver taps, so it opens the view that does.
+    assert glance["tap_action"]["navigation_path"] == f"/wereci-cook/{display['path']}"
+    assert not [c for c in control["cards"] if c["type"] == "iframe"]
+    assert SENSOR in control["cards"][2]["content"]
     assert control["cards"][0]["entities"] == [RECIPE_BOX, MATCHES, SCREEN, NO_PHONE, START]
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}

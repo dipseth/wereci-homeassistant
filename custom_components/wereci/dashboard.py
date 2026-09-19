@@ -2,8 +2,9 @@
 
 Two views per account, generated on every load (nothing is stored, read-only):
 
-- a control panel: what is cooking, step buttons, the ingredient list, stop,
-  and a live copy of the screen that takes taps like the screen itself;
+- a control panel: a picture-glance of what is cooking with the step and stop
+  buttons along its foot (tap the picture for the live screen), the step's
+  text, and the ingredient list;
 - the display view Cast devices and browser_mod browsers are shown: a single
   full-screen webpage card on `display_path`. Hidden from the tabs; reached
   by path.
@@ -61,7 +62,7 @@ class CookDashboard(dashboard.LovelaceConfig):
             display = entry.runtime_data.cook_display
             url = base + display.display_path
             if entry.options.get(CONF_CONTROL_PANEL, True):
-                views.append(self._control_view(entry, url))
+                views.append(self._control_view(entry))
             views.append(
                 {
                     "path": display.view_path,
@@ -73,20 +74,13 @@ class CookDashboard(dashboard.LovelaceConfig):
             )
         return {"title": "weReci", "views": views}
 
-    def _control_view(self, entry: Any, display_url: str) -> dict[str, Any]:
+    def _control_view(self, entry: Any) -> dict[str, Any]:
         reg = er.async_get(self.hass)
 
         def entity(platform: str, key: str) -> str | None:
             return reg.async_get_entity_id(platform, DOMAIN, f"{entry.unique_id}_{key}")
 
         sensor = entity("sensor", "cooking")
-        def press(key: str) -> dict[str, Any]:
-            return {
-                "action": "perform-action",
-                "perform_action": "button.press",
-                "target": {"entity_id": entity("button", key)},
-            }
-
         now = (
             f"{{% set s = '{sensor}' %}}"
             "{% if is_state(s, 'cooking') %}"
@@ -141,38 +135,57 @@ class CookDashboard(dashboard.LovelaceConfig):
                         if e
                     ],
                 },
+                self._glance(entry, entity),
                 {"type": "markdown", "content": now},
-                {
-                    "type": "horizontal-stack",
-                    "cards": [
-                        {
-                            "type": "button",
-                            "name": "Previous step",
-                            "icon": "mdi:chevron-left",
-                            "tap_action": press("previous_step"),
-                        },
-                        {
-                            "type": "button",
-                            "name": "Next step",
-                            "icon": "mdi:chevron-right",
-                            "tap_action": press("next_step"),
-                        },
-                        {
-                            "type": "button",
-                            "name": "Stop",
-                            "icon": "mdi:stop-circle-outline",
-                            "tap_action": {
-                                "action": "perform-action",
-                                "perform_action": f"{DOMAIN}.stop_cook_display",
-                                "data": {"config_entry_id": entry.entry_id},
-                            },
-                        },
-                    ],
-                },
-                # The receiver itself: reads are idempotent, so a second copy
-                # of the screen is free — and it takes taps like the screen.
-                {"type": "iframe", "url": display_url, "aspect_ratio": "56%"},
                 {"type": "markdown", "title": "Ingredients", "content": ingredients},
+            ],
+        }
+
+    def _glance(self, entry: Any, entity: Any) -> dict[str, Any]:
+        """The picture of what is cooking, with the step buttons along its foot.
+
+        A stock card over real entities, so the same YAML works as a tile on
+        anybody's own dashboard (README). Its `title` cannot be templated, so
+        the recipe's name is left to the picture and the text under it.
+        """
+        display = entry.runtime_data.cook_display
+
+        def press(key: str, icon: str) -> dict[str, Any]:
+            button = entity("button", key)
+            return {
+                "entity": button,
+                "icon": icon,
+                "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {"entity_id": button},
+                },
+            }
+
+        sensor = entity("sensor", "cooking")
+        return {
+            "type": "picture-glance",
+            "image_entity": entity("image", "cooking"),
+            "aspect_ratio": "16:9",
+            # The receiver itself is one tap away: scaling, swaps and Break it
+            # down are taps on IT, which a picture cannot take.
+            "tap_action": {
+                "action": "navigate",
+                "navigation_path": f"/{DEFAULT_DASHBOARD_PATH}/{display.view_path}",
+            },
+            "entities": [
+                {"entity": sensor, "show_state": True, "tap_action": {"action": "none"}},
+                press("previous_step", "mdi:chevron-left"),
+                press("next_step", "mdi:chevron-right"),
+                {
+                    "entity": sensor,
+                    "icon": "mdi:stop-circle-outline",
+                    "tap_action": {
+                        "action": "perform-action",
+                        "perform_action": f"{DOMAIN}.stop_cook_display",
+                        "data": {"config_entry_id": entry.entry_id},
+                    },
+                },
             ],
         }
 
