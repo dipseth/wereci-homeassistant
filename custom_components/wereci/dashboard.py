@@ -22,7 +22,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.json import json_bytes, json_fragment
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
-from .const import DEFAULT_DASHBOARD_PATH, DOMAIN
+from .const import CONF_CONTROL_PANEL, DEFAULT_DASHBOARD_PATH, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +51,8 @@ class CookDashboard(dashboard.LovelaceConfig):
         for entry in self.hass.config_entries.async_loaded_entries(DOMAIN):
             display = entry.runtime_data.cook_display
             url = base + display.display_path
-            views.append(self._control_view(entry, url))
+            if entry.options.get(CONF_CONTROL_PANEL, True):
+                views.append(self._control_view(entry, url))
             views.append(
                 {
                     "path": display.view_path,
@@ -167,9 +168,38 @@ class CookDashboard(dashboard.LovelaceConfig):
         return json_fragment(json_bytes(self._build()))
 
     @callback
-    def async_accounts_changed(self) -> None:
-        """An account loaded or unloaded: open frontends should re-read."""
+    def async_accounts_changed(self, setting_up: Any = None) -> None:
+        """An account loaded or unloaded: open frontends should re-read.
+
+        `setting_up` is the entry calling from its own setup — not counted as
+        loaded yet, but about to be.
+        """
+        entries = self.hass.config_entries.async_loaded_entries(DOMAIN)
+        if setting_up is not None:
+            entries = [*entries, setting_up]
+        _register_panel(
+            self.hass,
+            show_in_sidebar=any(
+                entry.options.get(CONF_CONTROL_PANEL, True) for entry in entries
+            ),
+            update=True,
+        )
         self._config_updated()
+
+
+def _register_panel(hass: HomeAssistant, *, show_in_sidebar: bool, update: bool) -> None:
+    # Hidden, never removed: the display view Cast devices load lives here too.
+    frontend.async_register_built_in_panel(
+        hass,
+        "lovelace",
+        frontend_url_path=DEFAULT_DASHBOARD_PATH,
+        sidebar_title="weReci",
+        sidebar_icon="mdi:chef-hat",
+        require_admin=False,
+        show_in_sidebar=show_in_sidebar,
+        config={"mode": MODE_YAML},
+        update=update,
+    )
 
 
 @callback
@@ -184,14 +214,5 @@ def async_setup_dashboard(hass: HomeAssistant) -> CookDashboard | None:
         return None
     cook = CookDashboard(hass)
     dashboards[DEFAULT_DASHBOARD_PATH] = cook
-    frontend.async_register_built_in_panel(
-        hass,
-        "lovelace",
-        frontend_url_path=DEFAULT_DASHBOARD_PATH,
-        sidebar_title="weReci",
-        sidebar_icon="mdi:chef-hat",
-        require_admin=False,
-        show_in_sidebar=True,
-        config={"mode": MODE_YAML},
-    )
+    _register_panel(hass, show_in_sidebar=True, update=False)
     return cook

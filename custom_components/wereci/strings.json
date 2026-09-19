@@ -28,6 +28,21 @@
       "default": "Connected. To use the recipe tools by voice or chat: Settings → Voice assistants → your assistant → the gear next to Conversation agent → under Control Home Assistant, tick weReci. The shopping list entity shows the list you share in weReci."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "What weReci adds",
+        "data": {
+          "shopping_list": "Shopping list",
+          "control_panel": "weReci control panel"
+        },
+        "data_description": {
+          "shopping_list": "Your synced weReci list as a to-do list entity.",
+          "control_panel": "The weReci dashboard in the sidebar: start a cook, step through it, see the screen. Off hides it; cook displays keep working."
+        }
+      }
+    }
+  },
   "entity": {
     "todo": {
       "shopping_list": {

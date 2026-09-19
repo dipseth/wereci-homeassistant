@@ -20,6 +20,10 @@ CONF_AUTHORIZE_URL = "authorize_url"
 CONF_TOKEN_URL = "token_url"
 CONF_DISPLAY_SECRET = "display_secret"
 
+# Options, per account. Both default to on.
+CONF_SHOPPING_LIST = "shopping_list"
+CONF_CONTROL_PANEL = "control_panel"
+
 # A seq check is one Redis HGET server-side; the full list is only re-read
 # when the seq moved.
 LIST_POLL_INTERVAL = timedelta(seconds=30)

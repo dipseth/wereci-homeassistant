@@ -12,11 +12,12 @@ from homeassistant.components.todo import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_SHOPPING_LIST, DOMAIN
 from .coordinator import ListItem, WereciConfigEntry, WereciListCoordinator
 
 
@@ -25,7 +26,14 @@ async def async_setup_entry(
     entry: WereciConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the list entity."""
+    """Add the list entity, unless the account's options turn it off."""
+    if not entry.options.get(CONF_SHOPPING_LIST, True):
+        reg = er.async_get(hass)
+        if entity_id := reg.async_get_entity_id(
+            "todo", DOMAIN, f"{entry.unique_id}_shopping_list"
+        ):
+            reg.async_remove(entity_id)
+        return
     async_add_entities([WereciShoppingList(entry.runtime_data.list_coordinator, entry)])
 
 

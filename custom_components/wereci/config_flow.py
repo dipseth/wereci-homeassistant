@@ -6,8 +6,16 @@ from collections.abc import Mapping
 import logging
 from typing import Any
 
-from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult
+import voluptuous as vol
+
+from homeassistant.config_entries import (
+    SOURCE_REAUTH,
+    ConfigEntry,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN
+from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
 
 from .api import (
@@ -22,6 +30,8 @@ from .const import (
     CONF_AUTHORIZE_URL,
     CONF_BASE_URL,
     CONF_CLIENT_ID,
+    CONF_CONTROL_PANEL,
+    CONF_SHOPPING_LIST,
     CONF_TOKEN_URL,
     DEFAULT_BASE_URL,
     DOMAIN,
@@ -47,6 +57,12 @@ class WereciFlowHandler(
     def logger(self) -> logging.Logger:
         """Return the logger."""
         return _LOGGER
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> WereciOptionsFlow:
+        """What this account adds to Home Assistant."""
+        return WereciOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -135,4 +151,31 @@ class WereciFlowHandler(
         return self.async_create_entry(
             title=email if isinstance(email, str) and email else "weReci",
             data=entry_data,
+        )
+
+
+class WereciOptionsFlow(OptionsFlowWithReload):
+    """Pick which surfaces this account adds: the list, the control panel."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Two checkboxes; saving reloads the entry."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+        options = self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_SHOPPING_LIST,
+                        default=options.get(CONF_SHOPPING_LIST, True),
+                    ): bool,
+                    vol.Required(
+                        CONF_CONTROL_PANEL,
+                        default=options.get(CONF_CONTROL_PANEL, True),
+                    ): bool,
+                }
+            ),
         )

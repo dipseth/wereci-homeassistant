@@ -117,6 +117,8 @@ The "new at this step" ingredient rail is the one thing a phone-driven cook has 
 
 **The weReci dashboard** appears in the sidebar by itself — there is nothing to build. Start a cook from it: type a recipe (a name or an id), pick a screen, choose whether a phone is involved, press **Start cooking**. Below that, its control panel shows what is cooking, has previous / next / stop buttons, the ingredient list, and a live copy of the screen that takes taps just like the screen does. The same dashboard holds the hidden full-screen view that Cast devices and browser_mod browsers are shown; it points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
 
+Don't want it, or the to-do list? **Settings → Devices & services → weReci → the gear on the account** has a checkbox for each: *Shopping list* and *weReci control panel*. Turning the panel off hides the sidebar entry; cook displays keep working.
+
 Rather lay it out yourself? Put a webpage card on `display_path` in any dashboard and pass `dashboard_path` / `view_path` to the service. A dashboard of your own at `/wereci-cook` is left alone.
 
 `wereci.stop_cook_display` closes it and gives the screen back; closing Cook Mode on the phone does the same.

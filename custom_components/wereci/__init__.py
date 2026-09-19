@@ -19,6 +19,7 @@ from .const import (
     CONF_AUTHORIZE_URL,
     CONF_BASE_URL,
     CONF_CLIENT_ID,
+    CONF_SHOPPING_LIST,
     CONF_TOKEN_URL,
     DOMAIN,
     MCP_PATH,
@@ -77,7 +78,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bo
     list_coordinator = WereciListCoordinator(hass, entry, url, token_manager)
     tools_coordinator = WereciToolsCoordinator(hass, entry, url, token_manager)
     await tools_coordinator.async_config_entry_first_refresh()
-    await list_coordinator.async_config_entry_first_refresh()
+    # Still built when the list is off: the cook display calls tools through it.
+    if entry.options.get(CONF_SHOPPING_LIST, True):
+        await list_coordinator.async_config_entry_first_refresh()
 
     entry.async_on_unload(
         llm.async_register_api(
@@ -96,14 +99,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bo
         list_coordinator, tools_coordinator, cook_display, entry
     )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    _dashboard_changed(hass)
+    _dashboard_changed(hass, entry)
     entry.async_on_unload(lambda: _dashboard_changed(hass))
     return True
 
 
-def _dashboard_changed(hass: HomeAssistant) -> None:
+def _dashboard_changed(
+    hass: HomeAssistant, setting_up: WereciConfigEntry | None = None
+) -> None:
     if (cook_dashboard := hass.data.get(DOMAIN)) is not None:
-        cook_dashboard.async_accounts_changed()
+        cook_dashboard.async_accounts_changed(setting_up)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bool:
