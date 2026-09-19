@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 12 72 70">
+  <style>
+    .ra { stroke: #C4735F; } .rb { stroke: #857433; } .rc { stroke: #47816F; }
+    @media (prefers-color-scheme: dark) {
+      .ra { stroke: #D4907B; } .rb { stroke: #9C8A45; } .rc { stroke: #5E9A87; }
+    }
+  </style>
+  <defs>
+    <mask id="wm-cuts">
+      <rect x="14" y="12" width="72" height="70" fill="white"/>
+      <path d="M 25.53 43.25 A 19 19 0 0 1 37.67 37.10" fill="none" stroke="black" stroke-width="14"/>
+      <path d="M 56.94 48.22 A 19 19 0 0 1 57.70 61.82" fill="none" stroke="black" stroke-width="14"/>
+    </mask>
+  </defs>
+  <g fill="none" stroke-width="8" mask="url(#wm-cuts)">
+    <circle cx="39.61" cy="56" r="19" class="rc"/>
+    <circle cx="60.39" cy="56" r="19" class="rb"/>
+    <circle cx="50" cy="38" r="19" class="ra"/>
+  </g>
+  <g fill="none" stroke-width="8" class="rc">
+    <path d="M 25.53 43.25 A 19 19 0 0 1 37.67 37.10"/>
+    <path d="M 56.94 48.22 A 19 19 0 0 1 57.70 61.82"/>
+  </g>
+</svg>

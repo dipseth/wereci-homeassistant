@@ -1,9 +1,36 @@
-# weReci for Home Assistant
+<p align="center">
+  <a href="https://wereci.xyz">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/wereci-logo-on-dark.png">
+      <img src="docs/brand/wereci-logo.png" alt="weReci" width="420">
+    </picture>
+  </a>
+</p>
+
+<h3 align="center">weReci for Home Assistant</h3>
+
+<p align="center">
+  Your recipes, beautifully kept — now in your kitchen's Home Assistant.
+</p>
+
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=dipseth&repository=wereci-homeassistant&category=integration"><img src="https://img.shields.io/badge/HACS-add%20repository-0B3B24?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white" alt="Add to HACS"></a>
+  <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=wereci"><img src="https://img.shields.io/badge/Home%20Assistant-add%20integration-5F9D8A?style=for-the-badge&logo=homeassistant&logoColor=white" alt="Add integration"></a>
+  <a href="https://wereci.xyz"><img src="https://img.shields.io/badge/weReci-wereci.xyz-D6917B?style=for-the-badge" alt="wereci.xyz"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/dipseth/wereci-homeassistant?color=9C8A45&label=release&style=flat-square" alt="release">
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.9%2B-0B3B24?style=flat-square" alt="Home Assistant 2026.9+">
+  <img src="https://img.shields.io/badge/auth-OAuth%202.1%20%2B%20PKCE-5F9D8A?style=flat-square" alt="OAuth 2.1 + PKCE">
+</p>
+
+---
 
 Connect your [weReci](https://wereci.xyz) cookbook to Home Assistant. One sign-in gives you:
 
-- **Recipe tools for Assist** — ask your voice or chat assistant what you can cook, look up a recipe, or put a recipe's ingredients on your shopping list.
-- **Your shopping list as a to-do list** — the list you share in weReci (List It) shows up as a `todo` entity. Tick, add, rename and remove lines from a dashboard or by voice; changes show up on your phones, and the other way round.
+- 🍳 **Recipe tools for Assist** — ask your voice or chat assistant what you can cook, look up a recipe, or put a recipe's ingredients on your shopping list.
+- 🛒 **Your shopping list as a to-do list** — the list you share in weReci (List It) shows up as a `todo` entity. Tick, add, rename and remove lines from a dashboard or by voice; changes show up on your phones, and the other way round.
 
 ## Requirements
 
@@ -49,3 +76,10 @@ Home Assistant's built-in Model Context Protocol integration can't be used inste
     uv sync && uv run pytest
 
 Tests run against real Home Assistant via `pytest-homeassistant-custom-component`; `mcp` is pinned to the version Home Assistant core ships.
+
+---
+
+<p align="center">
+  <a href="https://wereci.xyz"><img src="docs/brand/wereci-mark.svg" alt="" width="40"></a><br>
+  <sub><a href="https://wereci.xyz">wereci.xyz</a> &nbsp;·&nbsp; weReci™ &nbsp;·&nbsp; Not affiliated with Home Assistant or Nabu Casa.</sub>
+</p>
