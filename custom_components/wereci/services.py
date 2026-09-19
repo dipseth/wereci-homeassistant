@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -42,6 +43,7 @@ SHOW_SCHEMA = vol.Schema(
         vol.Optional("recipe_id"): cv.string,
         vol.Optional("recipe"): cv.string,
         vol.Optional("without_phone", default=False): cv.boolean,
+        vol.Optional("allow_closest", default=False): cv.boolean,
         vol.Optional("notify"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("dashboard_path", default=DEFAULT_DASHBOARD_PATH): cv.string,
         vol.Optional("view_path"): cv.string,
@@ -71,6 +73,58 @@ def _display(hass: HomeAssistant, call: ServiceCall) -> CookDisplay:
     return _runtime(hass, call).cook_display
 
 
+_RECIPE_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{18,}$", re.IGNORECASE)
+
+
+async def async_start_cook(
+    hass: HomeAssistant, runtime: Any, data: dict[str, Any]
+) -> dict[str, str]:
+    """What show_cook_display does — also the control panel's Start button."""
+    display: CookDisplay = runtime.cook_display
+    target = resolve_target(
+        hass, data.get("entity_id"), data.get("browser_id"), data.get("return_path", "/")
+    )
+    call_tool = runtime.list_coordinator.async_call_tool
+    recipe = await resolve_recipe(
+        call_tool,
+        data.get("recipe_id"),
+        data.get("recipe"),
+        bool(data.get("allow_closest")),
+    )
+    sender = (
+        await resolve_sender(hass, call_tool, display.base_url, recipe)
+        if data.get("without_phone")
+        else None
+    )
+    return await display.async_show(
+        target,
+        recipe=recipe,
+        sender=sender,
+        dashboard_path=data.get("dashboard_path") or DEFAULT_DASHBOARD_PATH,
+        view_path=data.get("view_path") or display.view_path,
+        notify=data.get("notify"),
+    )
+
+
+async def async_start_from_panel(hass: HomeAssistant, runtime: Any) -> None:
+    """The Start button: the panel's three choices → one cook."""
+    panel = runtime.cook_display.panel
+    if not panel.screen:
+        raise ServiceValidationError("Pick a screen first")
+    if panel.without_phone and not panel.recipe:
+        raise ServiceValidationError("Type a recipe first — or turn off Without a phone")
+    key = "recipe_id" if _RECIPE_ID.match(panel.recipe) else "recipe"
+    await async_start_cook(
+        hass,
+        runtime,
+        {
+            "entity_id": panel.screen,
+            "without_phone": panel.without_phone,
+            **({key: panel.recipe} if panel.recipe else {}),
+        },
+    )
+
+
 class StepIntent(intent.IntentHandler):
     """“Next step” / “previous step”, with no LLM in the loop."""
 
@@ -97,35 +151,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
     """Register the two services and the two intents."""
 
     async def show(call: ServiceCall) -> ServiceResponse:
-        display = _display(hass, call)
-        data: dict[str, Any] = dict(call.data)
-        target = resolve_target(
-            hass, data.get("entity_id"), data.get("browser_id"), data["return_path"]
-        )
-        recipe = await resolve_recipe(
-            _runtime(hass, call).list_coordinator.async_call_tool,
-            data.get("recipe_id"),
-            data.get("recipe"),
-        )
-        runtime = _runtime(hass, call)
-        sender = (
-            await resolve_sender(
-                hass,
-                runtime.list_coordinator.async_call_tool,
-                runtime.cook_display.base_url,
-                recipe,
-            )
-            if data["without_phone"]
-            else None
-        )
-        return await display.async_show(
-            target,
-            recipe=recipe,
-            sender=sender,
-            dashboard_path=data["dashboard_path"],
-            view_path=data.get("view_path") or display.view_path,
-            notify=data.get("notify"),
-        )
+        return await async_start_cook(hass, _runtime(hass, call), dict(call.data))
 
     async def toggle(call: ServiceCall) -> None:
         await _display(hass, call).async_command(

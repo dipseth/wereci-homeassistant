@@ -21,6 +21,10 @@ show_cook_display:
       default: false
       selector:
         boolean:
+    allow_closest:
+      default: false
+      selector:
+        boolean:
     notify:
       example: "[notify.mobile_app_my_phone]"
       selector:

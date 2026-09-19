@@ -14,6 +14,10 @@ from homeassistant.helpers import entity_registry as er, intent
 
 SENSOR = "sensor.wereci_cook_example_test_cooking"
 NEXT = "button.wereci_cook_example_test_next_step"
+START = "button.wereci_cook_example_test_start_cooking"
+RECIPE_BOX = "text.wereci_cook_example_test_recipe"
+SCREEN = "select.wereci_cook_example_test_screen"
+NO_PHONE = "switch.wereci_cook_example_test_without_a_phone"
 TOKEN = "rt-secret-token-0123456789"
 SENDER = "sender-token-0123456789"
 SNAPSHOT = {
@@ -258,9 +262,10 @@ async def test_the_dashboard_comes_with_the_integration(
         ],
     }
     # The control panel drives the real entities.
-    nxt = control["cards"][1]["cards"][1]["tap_action"]
+    nxt = control["cards"][2]["cards"][1]["tap_action"]
     assert nxt["target"] == {"entity_id": NEXT}
-    assert SENSOR in control["cards"][0]["content"]
+    assert SENSOR in control["cards"][1]["content"]
+    assert control["cards"][0]["entities"] == [RECIPE_BOX, SCREEN, NO_PHONE, START]
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}
     assert panel.to_response()["show_in_sidebar"] is True
@@ -367,3 +372,71 @@ def test_sender_clamps_steps_and_ignores_what_it_cannot_do() -> None:
     assert s.snapshot()["labels"]["stepOf"] == "Step 3 of 3"
     assert s.apply({"do": "scale", "factor": 2}) is False
     assert s.apply({"do": "toggle", "i": 7}) is False
+
+
+async def test_a_name_that_matches_nothing_is_refused_not_guessed(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    """Semantic search always answers; a kitchen screen should not cook a guess."""
+    await _setup(hass, entry)
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    player = _cast_player(hass)
+    list_call.return_value = {"hits": [{"id": "r-5", "title": "Baked ziti"}]}
+
+    with pytest.raises(ServiceValidationError, match="Baked ziti"):
+        await _show(hass, entity_id=player, recipe="lasagna", notify=[])
+    assert hass.states.get(SENSOR).state == "idle"
+
+    res = await _show(
+        hass, entity_id=player, recipe="lasagna", allow_closest=True, notify=[]
+    )
+    assert res["recipe_id"] == "r-5"
+
+
+def test_resembles() -> None:
+    from custom_components.wereci.cook_display import resembles
+
+    assert resembles("that pumpkin soup", "Pumpkin Curry Soup Recipe")
+    assert resembles("carrot soup", "Carrots & ginger soup")
+    assert not resembles("lasagna", "Baked ziti")
+    assert not resembles("the recipe", "Baked ziti")  # nothing but filler
+    # Half the words is the bar: "cake" alone carries a two-word ask.
+    assert resembles("chocolate cake", "Carrot cake with pecans")
+    assert not resembles("chocolate fudge brownies", "Carrot cake with pecans")
+
+
+async def test_the_panel_starts_a_cook(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    shown = async_mock_service(hass, "cast", "show_lovelace_view")
+    player = _cast_player(hass)
+    hass.states.async_set(player, "off", {"friendly_name": "Kitchen display"})
+    er.async_get(hass).async_update_entity(player, name="Kitchen display")
+    await hass.async_block_till_done()
+
+    with pytest.raises(ServiceValidationError, match="screen"):
+        await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+
+    assert hass.states.get(SCREEN).attributes["options"] == ["Kitchen display"]
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": SCREEN, "option": "Kitchen display"}, blocking=True,
+    )
+    await hass.services.async_call(
+        "text", "set_value", {"entity_id": RECIPE_BOX, "value": "carrot soup"}, blocking=True
+    )
+    assert hass.states.get(NO_PHONE).state == "on"  # the panel's default
+
+    list_call.side_effect = lambda tool, args: (
+        {"hits": [{"id": "r-2", "title": "Carrot soup"}]}
+        if tool == "search_recipes"
+        else RECIPE
+    )
+    await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+    await _settle(hass)
+
+    assert shown[0].data["entity_id"] == player
+    state = hass.states.get(SENSOR)
+    assert (state.state, state.attributes["title"]) == ("cooking", "Carrot soup")
+    assert state.attributes["driven_by"] == "home_assistant"

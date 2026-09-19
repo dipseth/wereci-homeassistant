@@ -87,8 +87,8 @@ class CookDashboard(dashboard.LovelaceConfig):
             "## Waiting for a phone\nOpen Cook Mode and enter "
             "**{{ state_attr(s, 'code') }}**."
             "{% else %}"
-            "## Nothing is cooking\nStart with the **weReci: Show cook display** "
-            "action — add a recipe and *Without a phone* to cook from here."
+            "## Nothing is cooking\nType a recipe above, pick a screen, press "
+            "**Start cooking**."
             "{% endif %}"
         )
         ingredients = (
@@ -102,6 +102,20 @@ class CookDashboard(dashboard.LovelaceConfig):
             "title": entry.title,
             "icon": "mdi:chef-hat",
             "cards": [
+                {
+                    "type": "entities",
+                    "title": "Cook something",
+                    "entities": [
+                        e
+                        for e in (
+                            entity("text", "recipe"),
+                            entity("select", "screen"),
+                            entity("switch", "without_phone"),
+                            entity("button", "start_cooking"),
+                        )
+                        if e
+                    ],
+                },
                 {"type": "markdown", "content": now},
                 {
                     "type": "horizontal-stack",

@@ -15,6 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 import json
 import logging
+import re
 import secrets
 from typing import Any
 from urllib.parse import quote
@@ -38,6 +39,7 @@ from .const import (
     TOOL_GET_RECIPE,
     TOOL_SEARCH_RECIPES,
 )
+from .panel import PanelChoice
 from .sender import HaSender
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,6 +95,7 @@ class CookDisplay:
         self._session: CookSession | None = None
         self._task: asyncio.Task[None] | None = None
         self._listeners: list[Callable[[], None]] = []
+        self.panel = PanelChoice()
 
     # ── state the entities read ────────────────────────────────────────────
 
@@ -407,33 +410,72 @@ class CookDisplay:
             await self._restore_screen(session.target)
 
 
+_WORD = re.compile(r"[^\W_]+", re.UNICODE)
+# Words that say nothing about WHICH recipe.
+_FILLER = frozenset(
+    "a an and the of for with my our that this some recipe recipes".split()
+)
+
+
+def _words(text: str) -> list[str]:
+    return [w for w in _WORD.findall(text.casefold()) if w not in _FILLER]
+
+
+def resembles(query: str, title: str) -> bool:
+    """Does this title look like what was asked for?
+
+    weReci's search is semantic: it always answers with the NEAREST recipe,
+    even when nothing fits — "lasagna" finds the closest pasta. A kitchen
+    screen should not start cooking a guess, so at least half of the asked
+    words must appear in the title (prefixes count: "carrot" ~ "carrots").
+    """
+    asked, have = _words(query), _words(title)
+    if not asked:
+        return False
+    hits = sum(
+        any(h.startswith(a) or a.startswith(h) for h in have if min(len(a), len(h)) >= 3)
+        for a in asked
+    )
+    return hits * 2 >= len(asked)
+
+
 async def resolve_recipe(
     call_tool: Callable[[str, dict[str, Any]], Any],
     recipe_id: str | None,
     query: str | None,
+    allow_closest: bool = False,
 ) -> Recipe | None:
-    """An id, or a name to search for → the recipe to open on the phone."""
+    """An id, or a name to search for → the recipe to open."""
     if recipe_id and query:
         raise ServiceValidationError("Give recipe_id or recipe, not both")
     if query:
         found = await call_tool(TOOL_SEARCH_RECIPES, {"query": query, "limit": 5})
         # `reference` hits are encyclopedia cards, not something to cook.
+        hits = [
+            h
+            for h in found.get("hits") or []
+            if isinstance(h, dict) and h.get("id") and not h.get("reference")
+        ]
         hit = next(
             (
                 h
-                for h in found.get("hits") or []
-                if isinstance(h, dict) and h.get("id") and not h.get("reference")
+                for h in hits
+                if allow_closest or resembles(query, str(h.get("title") or ""))
             ),
             None,
         )
         if hit is None:
-            raise ServiceValidationError(f"No weReci recipe matches “{query}”")
+            near = ", ".join(f"“{h.get('title')}”" for h in hits[:3])
+            raise ServiceValidationError(
+                f"No weReci recipe is called “{query}”."
+                + (f" Closest: {near}. Use recipe_id, or allow_closest." if near else "")
+            )
         return Recipe(str(hit["id"]), str(hit.get("title") or query))
     if recipe_id:
         got = await call_tool(TOOL_GET_RECIPE, {"id": recipe_id})
         if got.get("error"):
             raise ServiceValidationError(f"weReci has no recipe {recipe_id}")
-        return Recipe(recipe_id, str(got.get("title") or "your recipe"))
+        return Recipe(recipe_id, str(got.get("title") or got.get("recipe_title") or "your recipe"))
     return None
 
 

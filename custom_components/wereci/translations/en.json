@@ -40,6 +40,9 @@
       },
       "previous_step": {
         "name": "Previous step"
+      },
+      "start_cooking": {
+        "name": "Start cooking"
       }
     },
     "sensor": {
@@ -50,6 +53,21 @@
           "waiting": "Waiting for phone",
           "cooking": "Cooking"
         }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Recipe"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Screen"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Without a phone"
       }
     }
   },
@@ -88,7 +106,7 @@
         },
         "recipe": {
           "name": "Recipe",
-          "description": "A recipe to open, by name — the closest match in your collection. The notification then opens Cook Mode on it directly."
+          "description": "A recipe to open, by name. It must resemble the recipe's title (see Allow closest match)."
         },
         "recipe_id": {
           "name": "Recipe ID",
@@ -97,6 +115,10 @@
         "without_phone": {
           "name": "Without a phone",
           "description": "Home Assistant runs the cook itself: no phone, no notification. Needs a recipe. The recipe is cooked as written — scaling, Break it down and swaps stay in the weReci app."
+        },
+        "allow_closest": {
+          "name": "Allow closest match",
+          "description": "weReci's search always finds the nearest recipe, even when nothing fits. Off (default): a name must resemble the recipe's title or the action refuses. On: cook the closest match anyway."
         }
       }
     },

@@ -29,7 +29,14 @@ from .dashboard import async_setup_dashboard
 from .llm_api import WereciAPI, WereciToolsCoordinator
 from .services import async_setup_services
 
-PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.TODO]
+PLATFORMS = [
+    Platform.BUTTON,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.TEXT,
+    Platform.TODO,
+]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 

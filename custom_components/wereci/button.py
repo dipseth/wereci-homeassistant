@@ -22,6 +22,7 @@ async def async_setup_entry(
         [
             StepButton(display, entry, "next_step", 1),
             StepButton(display, entry, "previous_step", -1),
+            StartButton(display, entry, "start_cooking"),
         ]
     )
 
@@ -44,3 +45,21 @@ class StepButton(CookDisplayEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Step."""
         await self._display.async_command({"do": "step", "delta": self._delta})
+
+
+class StartButton(CookDisplayEntity, ButtonEntity):
+    """Cook the panel's recipe on the panel's screen."""
+
+    _attr_icon = "mdi:play-circle-outline"
+
+    def __init__(self, display: CookDisplay, entry: WereciConfigEntry, key: str) -> None:
+        """Initialize."""
+        super().__init__(display, entry, key)
+        self._entry = entry
+
+    async def async_press(self) -> None:
+        """Start."""
+        # Imported here: services.py imports the platforms' shared modules.
+        from .services import async_start_from_panel  # noqa: PLC0415
+
+        await async_start_from_panel(self.hass, self._entry.runtime_data)
