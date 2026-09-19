@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Sign in to weReci"
+      },
+      "reauth_confirm": {
+        "title": "Sign in to weReci again",
+        "description": "weReci needs you to sign in again to keep your recipes and shopping list connected."
+      }
+    },
+    "abort": {
+      "already_configured": "This weReci account is already connected.",
+      "cannot_connect": "weReci could not be reached. Try again in a moment.",
+      "registration_refused": "weReci could not register this Home Assistant. It must be reachable over https, or have My Home Assistant enabled.",
+      "no_account": "weReci signed you in but did not say which account. Try again.",
+      "wrong_account": "Sign in with the same weReci account this entry was set up with.",
+      "reauth_successful": "Signed in again.",
+      "authorize_url_timeout": "Timed out opening the weReci sign-in page.",
+      "missing_configuration": "weReci sign-in is not set up. Try adding the integration again.",
+      "oauth_error": "weReci returned an invalid sign-in response.",
+      "oauth_failed": "weReci sign-in failed.",
+      "oauth_timeout": "Timed out finishing the weReci sign-in.",
+      "oauth_unauthorized": "weReci did not authorize this connection.",
+      "user_rejected_authorize": "You declined the connection in weReci."
+    },
+    "create_entry": {
+      "default": "Connected. Give an Assist agent the weReci tools under its LLM API setting. The shopping list entity shows the list you share in weReci."
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Shopping list"
+      }
+    }
+  }
+}

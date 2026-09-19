@@ -1,0 +1,19 @@
+{
+  "domain": "wereci",
+  "name": "weReci",
+  "codeowners": [
+    "@dipseth"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "auth"
+  ],
+  "documentation": "https://github.com/dipseth/wereci-homeassistant",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/dipseth/wereci-homeassistant/issues",
+  "requirements": [
+    "mcp>=1.26.0"
+  ],
+  "version": "0.1.2"
+}

@@ -1,0 +1,16 @@
+[project]
+name = "wereci-homeassistant"
+version = "0.1.0"
+description = "weReci custom integration for Home Assistant"
+requires-python = ">=3.13.2"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest-homeassistant-custom-component",
+  "mcp==1.26.0",  # what HA 2026.9 core ships
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
