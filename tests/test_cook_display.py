@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
+from homeassistant.components import frontend
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er, intent
@@ -239,10 +240,12 @@ async def test_display_path_redirects_only_while_a_session_is_open(
 
 
 async def test_the_dashboard_comes_with_the_integration(
-    hass: HomeAssistant, entry, list_call, relay, hass_ws_client
+    hass: HomeAssistant, entry, list_call, relay, hass_ws_client, hass_client
 ) -> None:
     """Nobody builds a dashboard by hand: the view show_cook_display targets exists."""
     hass.config.external_url = "https://ha.example.test"
+    # The frontend itself is not installed here; stand in for its URL list.
+    hass.data[frontend.DATA_EXTRA_MODULE_URL] = frontend.UrlManager(lambda *_: None, [])
     await _setup(hass, entry)
     ws = await hass_ws_client(hass)
     await ws.send_json({"id": 1, "type": "lovelace/config", "url_path": "wereci-cook"})
@@ -269,6 +272,13 @@ async def test_the_dashboard_comes_with_the_integration(
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}
     assert panel.to_response()["show_in_sidebar"] is True
+    # The sidebar carries the weReci mark, from the icon set the integration serves.
+    assert panel.sidebar_icon == "wereci:mark"
+    extra = hass.data[frontend.DATA_EXTRA_MODULE_URL].urls
+    (url,) = [u for u in extra if u.startswith("/wereci_static/icons.js?v=")]
+    served = await (await hass_client()).get(url)
+    assert served.status == 200
+    assert "window.customIcons.wereci" in await served.text()
 
 
 async def test_a_recipe_makes_the_link_open_cook_mode_on_it(

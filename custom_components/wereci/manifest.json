@@ -1,6 +1,9 @@
 {
   "domain": "wereci",
   "name": "weReci",
+  "after_dependencies": [
+    "frontend"
+  ],
   "codeowners": [
     "@dipseth"
   ],
@@ -17,5 +20,5 @@
   "requirements": [
     "mcp>=1.26.0"
   ],
-  "version": "0.6.0"
+  "version": "0.6.1"
 }

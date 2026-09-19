@@ -26,7 +26,7 @@ from .const import (
 )
 from .cook_display import CookDisplay, CookDisplayView, ensure_display_secret
 from .coordinator import WereciConfigEntry, WereciListCoordinator, WereciRuntime
-from .dashboard import async_setup_dashboard
+from .dashboard import async_setup_dashboard, async_setup_icons
 from .llm_api import WereciAPI, WereciToolsCoordinator
 from .services import async_setup_services
 
@@ -46,6 +46,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register what is not tied to one account: services, intents, the view."""
     async_setup_services(hass)
     hass.http.register_view(CookDisplayView())
+    await async_setup_icons(hass)
     hass.data[DOMAIN] = async_setup_dashboard(hass)
     return True
 

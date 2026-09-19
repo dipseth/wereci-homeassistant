@@ -12,17 +12,26 @@ Two views per account, generated on every load (nothing is stored, read-only):
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any, override
 
 from homeassistant.components import frontend
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.lovelace import dashboard
 from homeassistant.components.lovelace.const import LOVELACE_DATA, MODE_YAML
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.json import json_bytes, json_fragment
 from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.loader import async_get_integration
 
-from .const import CONF_CONTROL_PANEL, DEFAULT_DASHBOARD_PATH, DOMAIN
+from .const import (
+    CONF_CONTROL_PANEL,
+    DEFAULT_DASHBOARD_PATH,
+    DOMAIN,
+    ICON_MARK,
+    ICONS_URL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -101,7 +110,7 @@ class CookDashboard(dashboard.LovelaceConfig):
         return {
             "path": f"control-{entry.entry_id.lower()}",
             "title": entry.title,
-            "icon": "mdi:chef-hat",
+            "icon": ICON_MARK,
             "cards": [
                 {
                     "type": "entities",
@@ -194,7 +203,7 @@ def _register_panel(hass: HomeAssistant, *, show_in_sidebar: bool, update: bool)
         "lovelace",
         frontend_url_path=DEFAULT_DASHBOARD_PATH,
         sidebar_title="weReci",
-        sidebar_icon="mdi:chef-hat",
+        sidebar_icon=ICON_MARK,
         require_admin=False,
         show_in_sidebar=show_in_sidebar,
         config={"mode": MODE_YAML},
@@ -216,3 +225,15 @@ def async_setup_dashboard(hass: HomeAssistant) -> CookDashboard | None:
     dashboards[DEFAULT_DASHBOARD_PATH] = cook
     _register_panel(hass, show_in_sidebar=True, update=False)
     return cook
+
+
+async def async_setup_icons(hass: HomeAssistant) -> None:
+    """Serve the weReci mark as an icon set, so the sidebar carries it."""
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(ICONS_URL, str(Path(__file__).parent / "frontend/icons.js"), True)]
+    )
+    # Cached hard; the version is what lets an update through.
+    version = (await async_get_integration(hass, DOMAIN)).version
+    # No frontend (a headless install, the tests): nothing to draw an icon in.
+    if frontend.DATA_EXTRA_MODULE_URL in hass.data:
+        frontend.add_extra_js_url(hass, f"{ICONS_URL}?v={version}")
