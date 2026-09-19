@@ -40,6 +40,8 @@ class CookingSensor(CookDisplayEntity, SensorEntity):
         session = self._display.session
         if session is None:
             return attrs
+        if session.recipe:
+            attrs["recipe_id"] = session.recipe.id
         if not session.paired:
             attrs["code"] = session.code
             attrs["link"] = self._display.pair_link

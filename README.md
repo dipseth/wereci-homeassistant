@@ -78,6 +78,17 @@ data:
   # notify: [notify.mobile_app_my_phone]    # default: every mobile app
 ```
 
+**Start on a recipe.** Add `recipe` (a name — the closest match in your collection) or `recipe_id` (as the recipe tools return it), and the notification opens Cook Mode on that recipe directly — one tap and the screen is cooking:
+
+```yaml
+action: wereci.show_cook_display
+data:
+  entity_id: media_player.kitchen_display
+  recipe: carrot soup
+```
+
+An assistant with the weReci tools can do the same after a search: “find me a soup, and put it on the kitchen display.”
+
 | Target | How it is shown | Needs |
 |---|---|---|
 | Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | Home Assistant reachable over **https** (Nabu Casa or your own domain) |
@@ -106,7 +117,7 @@ intents:
       - sentences: ["previous step", "go back a step"]
 ```
 
-The show service also returns `{code, link}` when called with a response variable.
+The show service also returns `{code, link}` (plus `recipe_id` and `title` when a recipe was given) when called with a response variable.
 
 ## How it connects
 

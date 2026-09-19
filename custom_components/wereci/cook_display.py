@@ -17,6 +17,7 @@ import json
 import logging
 import secrets
 from typing import Any
+from urllib.parse import quote
 
 from aiohttp import web
 import httpx
@@ -34,6 +35,8 @@ from .const import (
     CAST_REQUEST_TIMEOUT,
     CONF_DISPLAY_SECRET,
     DOMAIN,
+    TOOL_GET_RECIPE,
+    TOOL_SEARCH_RECIPES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,12 +59,21 @@ class DisplayTarget:
 
 
 @dataclass
+class Recipe:
+    """The recipe a display was opened for."""
+
+    id: str
+    title: str
+
+
+@dataclass
 class CookSession:
     """One open relay channel."""
 
     code: str
     token: str
     target: DisplayTarget
+    recipe: Recipe | None = None
     paired: bool = False
     snapshot: dict[str, Any] | None = None
     version: int = 0
@@ -119,7 +131,15 @@ class CookDisplay:
         """What the phone opens to pair without typing."""
         if self._session is None:
             return None
-        return f"{self._base_url}/?cast={self._session.code}"
+        recipe = self._session.recipe
+        if recipe is None:
+            return f"{self._base_url}/?cast={self._session.code}"
+        # ?cook=1 is the app's own "open Cook Mode" link, so the tap lands in
+        # Cook Mode on this recipe and pairs with nothing left to do.
+        return (
+            f"{self._base_url}/recipe/{quote(recipe.id, safe='')}"
+            f"?cook=1&cast={self._session.code}"
+        )
 
     @callback
     def async_add_listener(self, update: Callable[[], None]) -> CALLBACK_TYPE:
@@ -157,12 +177,15 @@ class CookDisplay:
         dashboard_path: str,
         view_path: str,
         notify: list[str] | None,
+        recipe: Recipe | None = None,
     ) -> dict[str, str]:
         """Open a channel, put the receiver on `target`, hand the code over."""
         if self._session is not None:
             await self.async_stop()
         code, token = await self._open_channel()
-        self._session = CookSession(code=code, token=token, target=target)
+        self._session = CookSession(
+            code=code, token=token, target=target, recipe=recipe
+        )
         try:
             await self._put_on_screen(target, dashboard_path, view_path)
         except Exception:
@@ -173,7 +196,10 @@ class CookDisplay:
         )
         self._notify()
         await self._notify_phones(notify)
-        return {"code": code, "link": f"{self._base_url}/?cast={code}"}
+        shown = {"code": code, "link": self.pair_link or ""}
+        if recipe is not None:
+            shown.update(recipe_id=recipe.id, title=recipe.title)
+        return shown
 
     async def _put_on_screen(
         self, target: DisplayTarget, dashboard_path: str, view_path: str
@@ -267,8 +293,11 @@ class CookDisplay:
                 {
                     "title": "weReci",
                     "message": (
-                        "The kitchen screen is ready. Tap, then open Cook Mode "
-                        f"— or enter {session.code}."
+                        f"Tap to cook {session.recipe.title} on the kitchen "
+                        f"screen — or enter {session.code} in Cook Mode."
+                        if session.recipe
+                        else "The kitchen screen is ready. Tap, then open Cook "
+                        f"Mode — or enter {session.code}."
                     ),
                     # iOS reads `url`, Android `clickAction`.
                     "data": {"url": link, "clickAction": link, "tag": "wereci-cook"},
@@ -354,6 +383,36 @@ class CookDisplay:
             pass  # the channel expires on its own
         if restore:
             await self._restore_screen(session.target)
+
+
+async def resolve_recipe(
+    call_tool: Callable[[str, dict[str, Any]], Any],
+    recipe_id: str | None,
+    query: str | None,
+) -> Recipe | None:
+    """An id, or a name to search for → the recipe to open on the phone."""
+    if recipe_id and query:
+        raise ServiceValidationError("Give recipe_id or recipe, not both")
+    if query:
+        found = await call_tool(TOOL_SEARCH_RECIPES, {"query": query, "limit": 5})
+        # `reference` hits are encyclopedia cards, not something to cook.
+        hit = next(
+            (
+                h
+                for h in found.get("hits") or []
+                if isinstance(h, dict) and h.get("id") and not h.get("reference")
+            ),
+            None,
+        )
+        if hit is None:
+            raise ServiceValidationError(f"No weReci recipe matches “{query}”")
+        return Recipe(str(hit["id"]), str(hit.get("title") or query))
+    if recipe_id:
+        got = await call_tool(TOOL_GET_RECIPE, {"id": recipe_id})
+        if got.get("error"):
+            raise ServiceValidationError(f"weReci has no recipe {recipe_id}")
+        return Recipe(recipe_id, str(got.get("title") or "your recipe"))
+    return None
 
 
 def resolve_target(

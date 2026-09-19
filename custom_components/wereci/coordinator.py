@@ -122,6 +122,13 @@ class WereciListCoordinator(DataUpdateCoordinator[ListState]):
         except (TimeoutError, httpx.HTTPError, McpError) as err:
             raise WereciError(str(err) or type(err).__name__) from err
 
+    async def async_call_tool(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
+        """One read-only tool call for the rest of the integration."""
+        try:
+            return await self._call(tool, args)
+        except WereciError as err:
+            raise HomeAssistantError(f"weReci: {err}") from err
+
     async def _async_update_data(self) -> ListState:
         prev = self.data
         args: dict[str, Any] = {}

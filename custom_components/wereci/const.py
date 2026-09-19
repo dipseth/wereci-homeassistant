@@ -28,6 +28,8 @@ LIST_TIMEOUT = 20
 
 TOOL_GET_LIST = "get_shopping_list"
 TOOL_UPDATE_LIST = "update_shopping_list"
+TOOL_GET_RECIPE = "get_recipe"
+TOOL_SEARCH_RECIPES = "search_recipes"
 # The todo entity owns these two; the Assist agent gets everything else plus
 # them (ticking a line by voice is the point).
 

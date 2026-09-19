@@ -24,7 +24,12 @@ from .const import (
     SERVICE_SHOW_COOK_DISPLAY,
     SERVICE_STOP_COOK_DISPLAY,
 )
-from .cook_display import STATUS_COOKING, CookDisplay, resolve_target
+from .cook_display import (
+    STATUS_COOKING,
+    CookDisplay,
+    resolve_recipe,
+    resolve_target,
+)
 
 _ENTRY = {vol.Optional("config_entry_id"): cv.string}
 
@@ -32,6 +37,8 @@ SHOW_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
         vol.Optional("browser_id"): cv.string,
+        vol.Optional("recipe_id"): cv.string,
+        vol.Optional("recipe"): cv.string,
         vol.Optional("notify"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("dashboard_path", default=DEFAULT_DASHBOARD_PATH): cv.string,
         vol.Optional("view_path"): cv.string,
@@ -49,12 +56,16 @@ def _displays(hass: HomeAssistant) -> list[CookDisplay]:
     ]
 
 
-def _display(hass: HomeAssistant, call: ServiceCall) -> CookDisplay:
+def _runtime(hass: HomeAssistant, call: ServiceCall) -> Any:
     wanted = call.data.get("config_entry_id")
     for entry in hass.config_entries.async_loaded_entries(DOMAIN):
         if wanted in (None, entry.entry_id):
-            return entry.runtime_data.cook_display
+            return entry.runtime_data
     raise ServiceValidationError("No weReci account is set up")
+
+
+def _display(hass: HomeAssistant, call: ServiceCall) -> CookDisplay:
+    return _runtime(hass, call).cook_display
 
 
 class StepIntent(intent.IntentHandler):
@@ -88,8 +99,14 @@ def async_setup_services(hass: HomeAssistant) -> None:
         target = resolve_target(
             hass, data.get("entity_id"), data.get("browser_id"), data["return_path"]
         )
+        recipe = await resolve_recipe(
+            _runtime(hass, call).list_coordinator.async_call_tool,
+            data.get("recipe_id"),
+            data.get("recipe"),
+        )
         return await display.async_show(
             target,
+            recipe=recipe,
             dashboard_path=data["dashboard_path"],
             view_path=data.get("view_path") or display.view_path,
             notify=data.get("notify"),

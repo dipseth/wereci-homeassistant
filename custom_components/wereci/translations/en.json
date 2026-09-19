@@ -85,6 +85,14 @@
         "config_entry_id": {
           "name": "Account",
           "description": "Which weReci account, if more than one is set up."
+        },
+        "recipe": {
+          "name": "Recipe",
+          "description": "A recipe to open, by name — the closest match in your collection. The notification then opens Cook Mode on it directly."
+        },
+        "recipe_id": {
+          "name": "Recipe ID",
+          "description": "A recipe to open, by its weReci id (as the recipe tools return it). Use instead of a name."
         }
       }
     },

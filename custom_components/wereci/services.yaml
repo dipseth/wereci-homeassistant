@@ -9,6 +9,14 @@ show_cook_display:
       example: kitchen-tablet
       selector:
         text:
+    recipe:
+      example: carrot soup
+      selector:
+        text:
+    recipe_id:
+      example: 9c811224-dc73-5052-a3f1-d8e93a4e22da
+      selector:
+        text:
     notify:
       example: "[notify.mobile_app_my_phone]"
       selector:

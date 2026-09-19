@@ -239,3 +239,38 @@ async def test_the_dashboard_comes_with_the_integration(
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}
     assert panel.to_response()["show_in_sidebar"] is False
+
+
+async def test_a_recipe_makes_the_link_open_cook_mode_on_it(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    phone = async_mock_service(hass, "notify", "mobile_app_phone")
+    player = _cast_player(hass)
+    link = "https://wereci.xyz/recipe/r-2?cook=1&cast=ABCDEF"
+
+    # By name: the first hit that is a recipe, not an encyclopedia card.
+    list_call.return_value = {
+        "hits": [
+            {"id": "r-1", "title": "Carrot", "reference": True},
+            {"id": "r-2", "title": "Carrot soup"},
+        ]
+    }
+    res = await _show(hass, entity_id=player, recipe="carrot soup")
+    list_call.assert_awaited_with("search_recipes", {"query": "carrot soup", "limit": 5})
+    assert res == {
+        "code": "ABCDEF", "link": link, "recipe_id": "r-2", "title": "Carrot soup"
+    }
+    assert phone[0].data["data"]["url"] == link
+    assert "Carrot soup" in phone[0].data["message"]
+
+    # By id: checked against weReci before anything is put on a screen.
+    list_call.return_value = {"title": "Carrot soup"}
+    assert (await _show(hass, entity_id=player, recipe_id="r-2"))["link"] == link
+    list_call.return_value = {"error": "not_found"}
+    with pytest.raises(ServiceValidationError):
+        await _show(hass, entity_id=player, recipe_id="nope")
+    list_call.return_value = {"hits": []}
+    with pytest.raises(ServiceValidationError):
+        await _show(hass, entity_id=player, recipe="zzz")
