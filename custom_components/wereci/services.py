@@ -92,7 +92,15 @@ async def async_start_cook(
         bool(data.get("allow_closest")),
     )
     sender = (
-        await resolve_sender(hass, call_tool, display.base_url, recipe)
+        await resolve_sender(
+            hass,
+            call_tool,
+            display.base_url,
+            recipe,
+            # Connected before cook:assist existed: the sign-in flow is how a
+            # connection gains a permission, so ask for it again.
+            lambda: runtime.entry.async_start_reauth(hass),
+        )
         if data.get("without_phone")
         else None
     )

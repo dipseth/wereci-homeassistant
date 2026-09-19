@@ -92,7 +92,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bo
     )
     ensure_display_secret(hass, entry)
     cook_display = CookDisplay(hass, entry, entry.data[CONF_BASE_URL])
-    entry.runtime_data = WereciRuntime(list_coordinator, tools_coordinator, cook_display)
+    entry.runtime_data = WereciRuntime(
+        list_coordinator, tools_coordinator, cook_display, entry
+    )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _dashboard_changed(hass)
     entry.async_on_unload(lambda: _dashboard_changed(hass))

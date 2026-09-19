@@ -336,7 +336,8 @@ async def test_without_phone_home_assistant_runs_the_cook(
     assert (first["title"], first["stepIdx"], first["stepText"]) == (
         "Carrot soup", 0, "Sweat the onions."
     )
-    assert "controls" not in first  # the screen hides what HA cannot do
+    # Scaling and swaps are weReci's tools; no saved breakdown → no toggle.
+    assert first["controls"] == {"scale": True, "swap": True, "breakdown": False}
     state = hass.states.get(SENSOR)
     assert (state.state, state.attributes["driven_by"]) == ("cooking", "home_assistant")
 
@@ -440,3 +441,107 @@ async def test_the_panel_starts_a_cook(
     state = hass.states.get(SENSOR)
     assert (state.state, state.attributes["title"]) == ("cooking", "Carrot soup")
     assert state.attributes["driven_by"] == "home_assistant"
+
+
+def _tools(answers: dict):
+    """list_call side effect: one canned answer (or a list of them) per tool."""
+    calls: list[tuple[str, dict]] = []
+
+    def answer(tool: str, args: dict):
+        calls.append((tool, args))
+        got = answers[tool]
+        return got.pop(0) if isinstance(got, list) else got
+
+    return answer, calls
+
+
+async def _cook(hass, entry, list_call, answers) -> list:
+    await _setup(hass, entry)
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    answer, calls = _tools({"get_recipe": RECIPE, **answers})
+    list_call.side_effect = answer
+    await _show(hass, entity_id=_cast_player(hass), recipe_id="r-2", without_phone=True)
+    await _settle(hass)
+    return calls
+
+
+async def _tap(hass: HomeAssistant, relay, cmd: dict) -> None:
+    """A tap on the screen: posted with the display's token, like the Hub does."""
+    await relay.post("https://x/command", json={"token": TOKEN, "cmd": cmd})
+    await _settle(hass)
+
+
+async def test_scaling_from_the_screen_is_weRecis_own_run(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    scaled = {"scaledIngredients": ["2 onions", "1 kg carrots"]}
+    with patch("custom_components.wereci.sender._SCALE_POLL_SECONDS", 0):
+        calls = await _cook(hass, entry, list_call, {
+            "scale_recipe": {"status": "pending", "job_id": "j1"},
+            "get_scale_job": [{"state": "running"}, {"state": "done", "result": scaled}],
+        })
+        await _tap(hass, relay, {"do": "scale", "factor": 2})
+        await _settle(hass)
+
+    assert ("scale_recipe", {"recipe_id": "r-2", "factor": 2.0, "substitutions": {}}) in calls
+    assert [c for c in calls if c[0] == "get_scale_job"] == [("get_scale_job", {"job_id": "j1"})] * 2
+    assert any(p["busyLabel"] == "Scaling…" for p in relay.pushed)  # the screen says so
+    last = relay.pushed[-1]
+    assert (last["scaleLabel"], last["busyLabel"]) == ("2×", None)
+    assert [i["text"] for i in last["allIngredients"]] == ["2 onions", "1 kg carrots"]
+
+    await _tap(hass, relay, {"do": "scale", "factor": 1})
+    assert relay.pushed[-1]["allIngredients"][0]["text"] == "1 onion"
+
+
+async def test_a_swap_is_offered_picked_and_restored(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _cook(hass, entry, list_call, {
+        "suggest_substitute": {"suggestions": [
+            {"replacement": "2 shallots", "ratio": "2:1", "confidence": "high",
+             "reasoning": "Milder allium."},
+        ]},
+    })
+    await _tap(hass, relay, {"do": "swapOpts", "i": 0})
+    panel = relay.pushed[-1]["swapPanel"]
+    assert (panel["status"], panel["options"][0]["replacement"]) == ("ready", "2 shallots")
+    assert panel["options"][0]["ratioText"] == "Ratio: 2:1"
+    assert "_found" not in panel
+
+    await _tap(hass, relay, {"do": "swapPick", "i": 0, "k": 0})
+    assert relay.pushed[-1]["allIngredients"][0]["text"] == "2 shallots"
+    assert relay.pushed[-1]["swapPanel"] is None
+
+    await _tap(hass, relay, {"do": "swapClear", "i": 0})
+    assert relay.pushed[-1]["allIngredients"][0]["text"] == "1 onion"
+
+
+async def test_a_connection_without_cook_assist_is_asked_to_sign_in_again(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _cook(hass, entry, list_call, {"scale_recipe": {"error": "permission_required"}})
+    await _tap(hass, relay, {"do": "scale", "factor": 2})
+
+    last = relay.pushed[-1]
+    assert last["controls"]["scale"] is False and last["scaleLabel"] is None
+    assert [f["context"]["source"] for f in hass.config_entries.flow.async_progress()] == ["reauth"]
+
+
+async def test_a_breakdown_made_in_the_app_can_be_toggled_never_made(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    await _setup(hass, entry)
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    finer = ["Peel onions.", "Slice onions.", "Sweat them.", "Add carrots.", "Simmer.", "Blend."]
+    answer, calls = _tools({"get_recipe": {**RECIPE, "reformulated_instructions": finer}})
+    list_call.side_effect = answer
+    await _show(hass, entity_id=_cast_player(hass), recipe_id="r-2", without_phone=True)
+    await _settle(hass)
+    assert relay.pushed[0]["controls"]["breakdown"] is True
+
+    await _tap(hass, relay, {"do": "step", "delta": 2})  # last of 3 written steps
+    await _tap(hass, relay, {"do": "breakdown"})
+    last = relay.pushed[-1]
+    assert (last["breakdownActive"], last["totalSteps"], last["stepIdx"]) == (True, 6, 5)
+    assert {c[0] for c in calls} == {"get_recipe"}  # nothing was generated

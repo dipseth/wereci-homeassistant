@@ -6,7 +6,7 @@
       },
       "reauth_confirm": {
         "title": "Sign in to weReci again",
-        "description": "weReci needs you to sign in again to keep your recipes and shopping list connected."
+        "description": "weReci needs you to sign in again — either the sign-in expired, or a new feature needs a permission this connection doesn't have yet (scaling and swaps on the cook display)."
       }
     },
     "abort": {
@@ -114,7 +114,7 @@
         },
         "without_phone": {
           "name": "Without a phone",
-          "description": "Home Assistant runs the cook itself: no phone, no notification. Needs a recipe. The recipe is cooked as written — scaling, Break it down and swaps stay in the weReci app."
+          "description": "Home Assistant runs the cook itself: no phone, no notification. Needs a recipe. Scaling and swaps work from the screen (they use your weReci AI allowance); Break it down is offered when the recipe was already broken down in the app."
         },
         "allow_closest": {
           "name": "Allow closest match",

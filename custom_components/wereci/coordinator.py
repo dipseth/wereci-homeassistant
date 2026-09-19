@@ -60,6 +60,7 @@ class WereciRuntime:
     list_coordinator: WereciListCoordinator
     tools_coordinator: Any
     cook_display: Any
+    entry: Any = None
 
 
 def parse_list(data: dict[str, Any]) -> ListState:

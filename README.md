@@ -101,7 +101,12 @@ data:
   without_phone: true
 ```
 
-The recipe is cooked as written. Scaling, Break it down and ingredient swaps run in the weReci app, so the screen doesn't offer them here — start from your phone when you want those.
+From the screen you can also:
+
+- **Scale** the recipe and **swap** an ingredient you're missing. These are weReci's own — the same runs as the taps in the app, counted against your AI allowance the same way — and need the `cook:assist` permission. If you connected before it existed, the first scale or swap makes Home Assistant ask you to sign in to weReci again; approve the new line and they work from then on.
+- **Break it down**, when the recipe was already broken down in the weReci app. Home Assistant never *generates* a breakdown: that saves new steps onto the recipe, and this connection is never allowed to change your collection.
+
+The "new at this step" ingredient rail is the one thing a phone-driven cook has that this doesn't.
 
 | Target | How it is shown | Needs |
 |---|---|---|
@@ -135,7 +140,7 @@ The show service also returns `{code, link}` (plus `recipe_id` and `title` when 
 
 ## How it connects
 
-OAuth 2.1 with PKCE — no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync`. It can never add, change, or delete recipes in your collection. The cook display uses weReci's public pair-by-code relay instead: Home Assistant holds a token for one short-lived display channel and never sees your recipes — only the step your phone chooses to show.
+OAuth 2.1 with PKCE — no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync cook:assist`. It can never add, change, or delete recipes in your collection. The cook display uses weReci's public pair-by-code relay instead: Home Assistant holds a token for one short-lived display channel and never sees your recipes — only the step your phone chooses to show.
 
 Home Assistant's built-in Model Context Protocol integration can't be used instead: it requires a client secret and doesn't send a PKCE challenge, and weReci only accepts public PKCE clients.
 

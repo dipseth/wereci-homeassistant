@@ -484,12 +484,20 @@ async def resolve_sender(
     call_tool: Callable[[str, dict[str, Any]], Any],
     base_url: str,
     recipe: Recipe | None,
+    on_permission_needed: Callable[[], None] | None = None,
 ) -> HaSender:
     """without_phone: fetch the whole recipe; Home Assistant will run the cook."""
     if recipe is None:
         raise ServiceValidationError("without_phone needs a recipe or recipe_id")
     got = await call_tool(TOOL_GET_RECIPE, {"id": recipe.id})
-    sender = HaSender(hass, base_url.rstrip("/"), got, lambda: None)
+    sender = HaSender(
+        hass,
+        base_url.rstrip("/"),
+        {**got, "id": recipe.id},
+        lambda: None,
+        call_tool=call_tool,
+        on_permission_needed=on_permission_needed,
+    )
     if got.get("error") or not sender.has_steps:
         raise ServiceValidationError(f"{recipe.title} has no steps to cook through")
     return sender
