@@ -1,0 +1,38 @@
+show_cook_display:
+  fields:
+    entity_id:
+      example: media_player.kitchen_display
+      selector:
+        entity:
+          domain: media_player
+    browser_id:
+      example: kitchen-tablet
+      selector:
+        text:
+    notify:
+      example: "[notify.mobile_app_my_phone]"
+      selector:
+        text:
+          multiple: true
+    dashboard_path:
+      default: wereci-cook
+      selector:
+        text:
+    view_path:
+      default: display
+      selector:
+        text:
+    return_path:
+      default: /
+      selector:
+        text:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: wereci
+stop_cook_display:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: wereci

@@ -31,6 +31,7 @@ Connect your [weReci](https://wereci.xyz) cookbook to Home Assistant. One sign-i
 
 - 🍳 **Recipe tools for Assist** — ask your voice or chat assistant what you can cook, look up a recipe, or put a recipe's ingredients on your shopping list.
 - 🛒 **Your shopping list as a to-do list** — the list you share in weReci (List It) shows up as a `todo` entity. Tick, add, rename and remove lines from a dashboard or by voice; changes show up on your phones, and the other way round.
+- 📺 **Cook Mode on a kitchen screen** — one service call puts weReci's cook display on a Nest Hub, wall tablet, Android TV or Fire TV and sends the pairing link to your phone. Your phone drives it; Home Assistant adds next/previous-step buttons and a cooking sensor.
 
 ## Requirements
 
@@ -65,9 +66,57 @@ Only a list weReci holds on its servers can sync — today that is the list you 
 
 Renaming a line replaces it (weReci keys a line on its ingredient). Home Assistant checks for changes every 30 seconds.
 
+## Cook Mode on a screen
+
+`wereci.show_cook_display` opens a cook display, puts it on the screen you name, and notifies your phone with a link. Tap the link, open any recipe's Cook Mode, and the screen follows your phone — scaling, swaps and all. The 6-letter code on the screen works too if the link never arrives (it is good for 10 minutes).
+
+```yaml
+action: wereci.show_cook_display
+data:
+  entity_id: media_player.kitchen_display   # Cast, Android TV or Fire TV
+  # browser_id: kitchen-tablet              # …or a browser_mod browser instead
+  # notify: [notify.mobile_app_my_phone]    # default: every mobile app
+```
+
+| Target | How it is shown | Needs |
+|---|---|---|
+| Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | the dashboard below; Home Assistant reachable over **https** |
+| `browser_mod` browser | `browser_mod.navigate` | the dashboard below; [browser_mod](https://github.com/thomasloven/hass-browser_mod) |
+| Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
+| Android TV Remote | `media_player.play_media` (url) | nothing else |
+
+**The dashboard** (Cast and browser_mod only): create a dashboard with URL `wereci-cook`, and in it a **panel** view with path `display` holding one webpage card. Its URL is the `display_path` attribute of `sensor.…_cooking` — a local address that forwards to whichever cook display is live:
+
+```yaml
+type: iframe
+url: /api/wereci/display/…   # copy from the sensor's display_path attribute
+aspect_ratio: 56%
+```
+
+Other names work — pass `dashboard_path` / `view_path` to the service. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+
+`wereci.stop_cook_display` closes it and gives the screen back; closing Cook Mode on the phone does the same.
+
+**Entities:** `sensor.…_cooking` is `idle` / `waiting` / `cooking`, with `title`, `step`, `total_steps` and `step_text` (and `code` + `link` while waiting — handy for an NFC tag automation). `button.…_next_step` and `button.…_previous_step` work while cooking.
+
+**Voice, without an LLM:** add `config/custom_sentences/en/wereci.yaml`:
+
+```yaml
+language: en
+intents:
+  WereciNextStep:
+    data:
+      - sentences: ["next step", "next recipe step"]
+  WereciPreviousStep:
+    data:
+      - sentences: ["previous step", "go back a step"]
+```
+
+The show service also returns `{code, link}` when called with a response variable.
+
 ## How it connects
 
-OAuth 2.1 with PKCE — no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync`. It can never add, change, or delete recipes in your collection.
+OAuth 2.1 with PKCE — no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync`. It can never add, change, or delete recipes in your collection. The cook display uses weReci's public pair-by-code relay instead: Home Assistant holds a token for one short-lived display channel and never sees your recipes — only the step your phone chooses to show.
 
 Home Assistant's built-in Model Context Protocol integration can't be used instead: it requires a client secret and doesn't send a PKCE challenge, and weReci only accepts public PKCE clients.
 

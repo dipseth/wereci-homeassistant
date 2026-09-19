@@ -7,7 +7,12 @@ from typing import cast
 from homeassistant.const import CONF_ACCESS_TOKEN, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import config_entry_oauth2_flow, llm
+from homeassistant.helpers import (
+    config_entry_oauth2_flow,
+    config_validation as cv,
+    llm,
+)
+from homeassistant.helpers.typing import ConfigType
 
 from .api import register_implementation
 from .const import (
@@ -18,10 +23,21 @@ from .const import (
     DOMAIN,
     MCP_PATH,
 )
+from .cook_display import CookDisplay, CookDisplayView, ensure_display_secret
 from .coordinator import WereciConfigEntry, WereciListCoordinator, WereciRuntime
 from .llm_api import WereciAPI, WereciToolsCoordinator
+from .services import async_setup_services
 
-PLATFORMS = [Platform.TODO]
+PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.TODO]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register what is not tied to one account: services, intents, the view."""
+    async_setup_services(hass)
+    hass.http.register_view(CookDisplayView())
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bool:
@@ -65,11 +81,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bo
             ),
         )
     )
-    entry.runtime_data = WereciRuntime(list_coordinator, tools_coordinator)
+    ensure_display_secret(hass, entry)
+    cook_display = CookDisplay(hass, entry, entry.data[CONF_BASE_URL])
+    entry.runtime_data = WereciRuntime(list_coordinator, tools_coordinator, cook_display)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: WereciConfigEntry) -> bool:
     """Unload a config entry."""
+    # The channel is closed, but the screen is left alone: a restart or reload
+    # should not blank the kitchen display mid-recipe.
+    await entry.runtime_data.cook_display.async_stop(restore=False)
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

@@ -33,6 +33,70 @@
       "shopping_list": {
         "name": "Shopping list"
       }
+    },
+    "button": {
+      "next_step": {
+        "name": "Next step"
+      },
+      "previous_step": {
+        "name": "Previous step"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Cooking",
+        "state": {
+          "idle": "Idle",
+          "waiting": "Waiting for phone",
+          "cooking": "Cooking"
+        }
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Show cook display",
+      "description": "Put weReci Cook Mode's display on a screen and send the pairing link to your phone. The phone drives it.",
+      "fields": {
+        "entity_id": {
+          "name": "Media player",
+          "description": "A Cast device (Nest Hub, Chromecast), Android TV or Fire TV."
+        },
+        "browser_id": {
+          "name": "Browser ID",
+          "description": "A browser_mod browser, e.g. a wall tablet. Use instead of a media player."
+        },
+        "notify": {
+          "name": "Notify",
+          "description": "Notify services to send the pairing link to. Default: every mobile app."
+        },
+        "dashboard_path": {
+          "name": "Dashboard path",
+          "description": "Dashboard holding the webpage card (Cast and browser_mod targets)."
+        },
+        "view_path": {
+          "name": "View path",
+          "description": "View holding the webpage card."
+        },
+        "return_path": {
+          "name": "Return path",
+          "description": "Where a browser_mod browser goes when the display stops."
+        },
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Which weReci account, if more than one is set up."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Stop cook display",
+      "description": "Close the cook display and give the screen back.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Which weReci account, if more than one is set up."
+        }
+      }
     }
   }
 }
