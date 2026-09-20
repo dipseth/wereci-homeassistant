@@ -337,20 +337,35 @@ async def test_the_dashboard_comes_with_the_integration(
              "aspect_ratio": "56%"}
         ],
     }
-    # The control panel drives the real entities.
-    glance = control["cards"][1]
+    # The control panel drives the real entities: the picture is the hero row,
+    # the step text under it, controls and ingredients on the row below.
+    assert (control["type"], control["max_columns"]) == ("sections", 2)
+    hero, cook, ingredients = control["sections"]
+    assert hero["column_span"] == 2
+    glance, step = hero["cards"]
     assert (glance["type"], glance["image_entity"]) == ("picture-glance", IMAGE)
     assert glance["entities"][2]["tap_action"]["target"] == {"entity_id": NEXT}
     assert glance["entities"][3]["tap_action"]["perform_action"] == "wereci.stop_cook_display"
     # The picture takes no receiver taps, so it opens the view that does.
     assert glance["tap_action"]["navigation_path"] == f"/wereci-cook/{display['path']}"
-    assert not [c for c in control["cards"] if c["type"] == "iframe"]
-    assert SENSOR in control["cards"][2]["content"]
-    assert control["cards"][0]["entities"] == [RECIPE_BOX, MATCHES, SCREEN, NO_PHONE, START]
-    # The ingredients are a stock to-do card over the entity that ticks the screen.
-    assert control["cards"][3] == {
-        "type": "todo-list", "entity": INGREDIENTS, "title": "Ingredients"
-    }
+    assert step["type"] == "markdown" and SENSOR in step["content"]
+    # The picture already names what is cooking; the text never repeats it.
+    assert "Nothing is cooking" not in step["content"]
+    assert cook["cards"][0] == {"type": "heading", "heading": "Cook something"}
+    assert [e["entity"] for e in cook["cards"][1]["entities"]] == [
+        RECIPE_BOX, MATCHES, SCREEN, NO_PHONE, START
+    ]
+    # Short names: the device name is noise on its own panel.
+    assert [e["name"] for e in cook["cards"][1]["entities"]] == [
+        "Recipe", "Matches", "Screen", "Without a phone", "Start cooking"
+    ]
+    # The ingredients are a stock to-do card over the entity that ticks the
+    # screen, shown only while a recipe is up.
+    assert ingredients["visibility"] == [
+        {"condition": "state", "entity": SENSOR, "state": "cooking"}
+    ]
+    assert ingredients["cards"][1] == {"type": "todo-list", "entity": INGREDIENTS}
+    assert "iframe" not in str(control)
     # The synced shopping list is the next tab over, not a dashboard of its own.
     assert shopping["path"] == f"list-{entry.entry_id.lower()}"
     assert shopping["cards"] == [

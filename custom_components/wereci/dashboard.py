@@ -2,9 +2,10 @@
 
 Three views per account, generated on every load (nothing is stored, read-only):
 
-- a control panel: a picture-glance of what is cooking with the step and stop
-  buttons along its foot (tap the picture for the live screen), the step's
-  text, and the ingredients as a to-do list that ticks the screen;
+- a control panel, in sections: a picture-glance of what is cooking as the
+  hero row, with the step and stop buttons along its foot (tap the picture for
+  the live screen) and the step's text under it; below, the controls that
+  start a cook and the ingredients as a to-do list that ticks the screen;
 - the shopping list (List It) as a to-do list, the next tab over;
 - the display view Cast devices and browser_mod browsers are shown: a single
   full-screen webpage card on `display_path`. Hidden from the tabs; reached
@@ -87,20 +88,23 @@ class CookDashboard(dashboard.LovelaceConfig):
         return entity
 
     def _control_view(self, entry: Any) -> dict[str, Any]:
+        """The cook, laid out as sections: the picture is the hero.
+
+        Its own row across the top, the step (or the search) as a line right
+        under it; the controls and the ingredients share the row below. The
+        picture already says what is cooking, so the text never repeats it.
+        """
         entity = self._entity(entry)
         sensor = entity("sensor", "cooking")
         now = (
             f"{{% set s = '{sensor}' %}}"
             "{% if is_state(s, 'cooking') %}"
-            "## {{ state_attr(s, 'title') }}\n"
             "**Step {{ state_attr(s, 'step') }} of {{ state_attr(s, 'total_steps') }}**"
             "\n\n{{ state_attr(s, 'step_text') }}"
             "{% elif is_state(s, 'waiting') %}"
-            "## Waiting for a phone\nOpen Cook Mode and enter "
-            "**{{ state_attr(s, 'code') }}**."
+            "Open Cook Mode on your phone and enter **{{ state_attr(s, 'code') }}**."
             "{% else %}"
             f"{{% set m = '{entity('select', 'matches')}' %}}"
-            "## Nothing is cooking\n"
             "{% if state_attr(m, 'searching') %}"
             "Searching weReci for **{{ state_attr(m, 'query') }}**…"
             "{% elif state_attr(m, 'error') %}"
@@ -117,34 +121,52 @@ class CookDashboard(dashboard.LovelaceConfig):
             "{% endif %}"
             "{% endif %}"
         )
+        controls = [
+            {"entity": e, "name": name}
+            for e, name in (
+                (entity("text", "recipe"), "Recipe"),
+                (entity("select", "matches"), "Matches"),
+                (entity("select", "screen"), "Screen"),
+                (entity("switch", "without_phone"), "Without a phone"),
+                (entity("button", "start_cooking"), "Start cooking"),
+            )
+            if e
+        ]
         return {
             "path": f"control-{entry.entry_id.lower()}",
             "title": entry.title,
             "icon": ICON_MARK,
-            "cards": [
+            "type": "sections",
+            "max_columns": 2,
+            "dense_section_placement": True,
+            "sections": [
                 {
-                    "type": "entities",
-                    "title": "Cook something",
-                    "entities": [
-                        e
-                        for e in (
-                            entity("text", "recipe"),
-                            entity("select", "matches"),
-                            entity("select", "screen"),
-                            entity("switch", "without_phone"),
-                            entity("button", "start_cooking"),
-                        )
-                        if e
+                    "type": "grid",
+                    "column_span": 2,
+                    "cards": [
+                        self._glance(entry, entity),
+                        {"type": "markdown", "content": now},
                     ],
                 },
-                self._glance(entry, entity),
-                {"type": "markdown", "content": now},
-                # A stock to-do card over the ingredients entity: each box is
-                # the same check-off as a tap on the kitchen screen.
                 {
-                    "type": "todo-list",
-                    "entity": entity("todo", "ingredients"),
-                    "title": "Ingredients",
+                    "type": "grid",
+                    "cards": [
+                        {"type": "heading", "heading": "Cook something"},
+                        {"type": "entities", "entities": controls},
+                    ],
+                },
+                # A stock to-do card over the ingredients entity: each box is
+                # the same check-off as a tap on the kitchen screen. Nothing
+                # to tick until a recipe is up, so the section waits for one.
+                {
+                    "type": "grid",
+                    "visibility": [
+                        {"condition": "state", "entity": sensor, "state": "cooking"}
+                    ],
+                    "cards": [
+                        {"type": "heading", "heading": "Ingredients"},
+                        {"type": "todo-list", "entity": entity("todo", "ingredients")},
+                    ],
                 },
             ],
         }
