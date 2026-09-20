@@ -44,11 +44,32 @@ Sign in once and your [weReci](https://wereci.xyz) cookbook becomes part of your
 
 1. **Install.** In HACS: ⋮ → *Custom repositories* → add `https://github.com/dipseth/wereci-homeassistant` as an *Integration* → install **weReci** → restart. Or copy `custom_components/wereci/` into `/config/custom_components/` and restart.
 2. **Connect.** Sign in at [wereci.xyz](https://wereci.xyz) in the same browser, then *Settings → Devices & services → Add integration → weReci*. Approve the connection. There is no client ID or secret to enter.
-3. **Give Assist the tools** (optional). *Settings → Voice assistants → your assistant → Conversation agent → ⚙️ → Control Home Assistant* → tick **weReci (your email)**. Keep **Assist** ticked so the agent can still control your home.
+3. **Give your assistant the recipe tools** (optional). See [Connect weReci to Assist](#connect-wereci-to-assist) below.
 
 That's it. The **weReci** dashboard is now in your sidebar, and the shopping list and cooking entities exist. Disconnect any time from weReci → *Your AI → Connected AI apps*.
 
 > **Note:** each connected account has its own settings (the gear on the entry under *Devices & services*) with a checkbox for the **Cook page** and one for the **Shopping list page**. Untick either or both to keep those views out of the dashboard. Entities, voice and cook displays are unaffected.
+
+## Connect weReci to Assist
+
+Connecting the integration does not, by itself, let your voice or chat assistant use weReci. You hand the tools to the assistant's **conversation agent** (Google Gemini, OpenAI, Anthropic, Ollama, and so on) in one checkbox.
+
+1. Open *Settings → Voice assistants* and pick your assistant.
+2. Next to **Conversation agent**, click the ⚙️ gear.
+3. Under **Control Home Assistant**, tick **weReci (your email)**. Keep **Assist** ticked too, so the agent can still control your home. Submit.
+
+<p align="center">
+  <img src="docs/screenshots/assist-conversation-agent.png" alt="The conversation agent's settings dialog for a Google Gemini agent: under Control Home Assistant, the boxes for Assist and for weReci (your email) are ticked" width="560"><br>
+  <sub>One checkbox: <b>weReci (your email)</b> under <b>Control Home Assistant</b></sub>
+</p>
+
+From then on you can ask that assistant things like "what can I cook with chicken and lemons?", "find my carrot soup", "put the lasagna ingredients on the shopping list", or "find me a soup and put it on the kitchen display."
+
+**Good to know**
+
+- Only agents backed by a language model show the **Control Home Assistant** list. The built-in Home Assistant agent understands fixed sentences instead; for step control without an LLM, see [Voice step control without an LLM](#build-your-own).
+- Each assistant has its own agent settings. If you use several assistants, tick weReci on each one you want to have recipes.
+- If you connect a second weReci account, it appears as its own checkbox, named after its email.
 
 ## The dashboard
 
