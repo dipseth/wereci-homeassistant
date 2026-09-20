@@ -27,120 +27,167 @@
 
 ---
 
-Connect your [weReci](https://wereci.xyz) cookbook to Home Assistant. One sign-in gives you:
+Sign in once and your [weReci](https://wereci.xyz) cookbook becomes part of your home:
 
-- 🍳 **Recipe tools for Assist** — ask your voice or chat assistant what you can cook, look up a recipe, or put a recipe's ingredients on your shopping list.
-- 🛒 **Your shopping list as a to-do list** — the list you share in weReci (List It) shows up as a `todo` entity. Tick, add, rename and remove lines from a dashboard or by voice; changes show up on your phones, and the other way round.
-- 📺 **Cook Mode on a kitchen screen** — one service call puts weReci's cook display on a Nest Hub, wall tablet, Android TV or Fire TV and sends the pairing link to your phone. Your phone drives it; Home Assistant adds next/previous-step buttons and a cooking sensor.
-
-## Requirements
-
-- Home Assistant **2026.9** or newer.
-- A weReci account (guest sessions can't connect).
-- Home Assistant reachable over **https**, or **My Home Assistant** enabled (it is by default). weReci won't redirect a sign-in to a plain-http address.
-
-## Install
-
-**HACS:** HACS → ⋮ → Custom repositories → add `https://github.com/dipseth/wereci-homeassistant` as an *Integration* → install **weReci** → restart Home Assistant.
-
-**Manual:** copy `custom_components/wereci/` into your `/config/custom_components/` folder and restart.
-
-## Set up
-
-1. In the browser you use for Home Assistant, sign in at [wereci.xyz](https://wereci.xyz) with your account first.
-2. Settings → Devices & services → **Add integration** → **weReci**, and approve the connection. There is no client ID or secret to enter.
-3. For Assist: Settings → Voice assistants → your assistant → **Conversation agent** → the ⚙️ gear next to it → under **Control Home Assistant**, tick **weReci (your email)**. Leave **Assist** ticked too, so the agent can still control your home.
-
-The entry is named after your weReci email. You can disconnect any time from weReci → Your AI → Connected AI apps.
-
-## The shopping list entity
-
-Only a list weReci holds on its servers can sync — today that is the list you **share with your cookbook partner**. A list kept only on your phone stays on your phone. When there is nothing to show, the entity is `unavailable` and its `reason` attribute says why:
-
-| `reason` | Meaning |
-|---|---|
-| `no_synced_list` | This account has no shared list. |
-| `not_shared` | A shared list exists, but you haven't joined it — join from List It in the app. |
-| `permission_required` | The shopping-list permission wasn't approved. Remove and re-add the integration. |
-| `unavailable` | weReci couldn't be reached. |
-
-Renaming a line replaces it (weReci keys a line on its ingredient). Home Assistant checks for changes every 30 seconds.
-
-## Cook Mode on a screen
-
-`wereci.show_cook_display` opens a cook display, puts it on the screen you name, and notifies your phone with a link. Tap the link, open any recipe's Cook Mode, and the screen follows your phone — scaling, swaps and all. The 6-letter code on the screen works too if the link never arrives (it is good for 10 minutes).
-
-```yaml
-action: wereci.show_cook_display
-data:
-  entity_id: media_player.kitchen_display   # Cast, Android TV or Fire TV
-  # browser_id: kitchen-tablet              # …or a browser_mod browser instead
-  # notify: [notify.mobile_app_my_phone]    # default: every mobile app
-```
-
-**Start on a recipe.** Add `recipe` (a name — the closest match in your collection) or `recipe_id` (as the recipe tools return it), and the notification opens Cook Mode on that recipe directly — one tap and the screen is cooking:
-
-```yaml
-action: wereci.show_cook_display
-data:
-  entity_id: media_player.kitchen_display
-  recipe: carrot soup
-```
-
-A name has to resemble the recipe's title. weReci's search is semantic — it always finds the *nearest* recipe, so “lasagna” would otherwise start your closest pasta. When nothing resembles the name, the action refuses and lists the closest titles; pass `allow_closest: true` to cook the nearest match anyway, or use `recipe_id`.
-
-An assistant with the weReci tools can do the same after a search: “find me a soup, and put it on the kitchen display.”
-
-**Cook with no phone at all.** Add `without_phone: true` and Home Assistant runs the cook itself: it fetches the recipe, puts step 1 on the screen, and answers every tap on the screen, the step buttons and voice. No notification is sent.
-
-```yaml
-action: wereci.show_cook_display
-data:
-  entity_id: media_player.kitchen_display
-  recipe: carrot soup
-  without_phone: true
-```
-
-From the screen you can also:
-
-- **Scale** the recipe and **swap** an ingredient you're missing. These are weReci's own — the same runs as the taps in the app, counted against your AI allowance the same way — and need the `cook:assist` permission. If you connected before it existed, the first scale or swap makes Home Assistant ask you to sign in to weReci again; approve the new line and they work from then on.
-- **Break it down**, when the recipe was already broken down in the weReci app. Home Assistant never *generates* a breakdown: that saves new steps onto the recipe, and this connection is never allowed to change your collection.
-
-The "new at this step" ingredient rail is the one thing a phone-driven cook has that this doesn't.
-
-| Target | How it is shown | Needs |
-|---|---|---|
-| Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | Home Assistant reachable over **https** (Nabu Casa or your own domain) |
-| `browser_mod` browser | `browser_mod.navigate` | [browser_mod](https://github.com/thomasloven/hass-browser_mod) |
-| Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
-| Android TV Remote | `media_player.play_media` (url) | nothing else |
+- 📺 **Cook on a kitchen screen.** Put a recipe on a Nest Hub, wall tablet, Android TV or Fire TV. Step through it from your phone, by voice, or with the buttons on the screen.
+- 🛒 **Shopping list as a to-do.** Your shared List It list appears as a Home Assistant to-do list. Tick or add lines here, on your phone, or by voice. They stay in sync.
+- 🍳 **Recipes for Assist.** Ask your voice or chat assistant what you can cook, look up a recipe, or add its ingredients to the list.
+- 🧭 **A ready-made dashboard.** A weReci page appears in your sidebar the moment you connect. Search, pick a recipe, pick a screen, start cooking.
 
 <p align="center">
   <img src="docs/screenshots/dashboard-cooking-0.10.3.webp" alt="The weReci dashboard in Home Assistant while cooking: the live cook display fills the top of the page with the recipe's photo and the current step, then Back / Next / Stop and the Cook something form" width="880">
 </p>
 
-**The weReci dashboard** appears in the sidebar by itself — there is nothing to build. Start a cook from it: type what you want under **Recipe** (words, or a recipe id) — weReci is searched in the background and **Matches** fills with what it found. Words that name one recipe pick it for you; a vague word (“pasta”) leaves the pick to you. Then pick a screen, choose whether a phone is involved, press **Start cooking**. Building your own card? `select.…_matches` carries the whole search as attributes: `query`, `searching`, `error`, `recipe_id` (the pick) and `matches` (`id`, `title`, `cuisine`, `cookbook`). While a display is up, the page is headed by the live cook display itself — the very page the kitchen screen shows, in a frame, so it takes taps just like the screen does (scaling, swaps, Break it down); when nothing is cooking, the cooking picture with the search line under it takes that place. Below sit Back / Next / Stop, those controls and, once a recipe is up, the ingredients as a to-do list: ticking a box there is the same check-off as a tap on the kitchen screen, and a tick on the screen (or the phone) moves the box here. On a phone-width screen the frame is small and the receiver's text with it; the step buttons and the ingredients under it are the readable copy there. The next tab over is your synced shopping list (List It), so the cook and the shop live in one place. The same dashboard holds the hidden full-screen view that Cast devices and browser_mod browsers are shown; it points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+## Quick start
+
+**You need:** Home Assistant 2026.9 or newer, a weReci account (not a guest session), and Home Assistant reachable over **https** or with **My Home Assistant** enabled (it is by default).
+
+1. **Install.** In HACS: ⋮ → *Custom repositories* → add `https://github.com/dipseth/wereci-homeassistant` as an *Integration* → install **weReci** → restart. Or copy `custom_components/wereci/` into `/config/custom_components/` and restart.
+2. **Connect.** Sign in at [wereci.xyz](https://wereci.xyz) in the same browser, then *Settings → Devices & services → Add integration → weReci*. Approve the connection. There is no client ID or secret to enter.
+3. **Give Assist the tools** (optional). *Settings → Voice assistants → your assistant → Conversation agent → ⚙️ → Control Home Assistant* → tick **weReci (your email)**. Keep **Assist** ticked so the agent can still control your home.
+
+That's it. The **weReci** dashboard is now in your sidebar, and the shopping list and cooking entities exist. Disconnect any time from weReci → *Your AI → Connected AI apps*.
+
+## The dashboard
+
+The integration creates a **weReci** dashboard for you. It has two tabs: **Cook** and **Shopping list**.
+
+**Cook tab.** Type a recipe name under **Recipe**. weReci searches as you type and the **Matches** list fills in. If your words clearly name one recipe, it is picked for you. If they are vague ("pasta"), you pick from the list. Choose a screen, choose whether a phone drives the cook, and press **Start cooking**.
+
+While cooking, the top of the page shows the live cook display itself: the same page your kitchen screen shows, in a frame. Taps work there just like on the screen. Below it are **Back / Next / Stop** and the recipe's ingredients as a to-do list. Tick a box in either place and the other follows.
+
+**Shopping list tab.** Your shared List It list, as a to-do card.
 
 <table align="center">
   <tr>
     <td align="center"><img src="docs/screenshots/dashboard-idle.webp" alt="The dashboard when nothing is cooking: the weReci mark, and the Matches list open under a search for “pasta”" width="440"></td>
-    <td align="center"><img src="docs/screenshots/entities-and-shopping-list.webp" alt="The integration's entities on the device page beside the synced shopping list as a to-do card" width="440"></td>
+    <td align="center"><img src="docs/screenshots/receiver-ingredients.webp" alt="The live cook display opened on its Ingredients page inside the dashboard: ½× / 1× / 2× / 3× scale chips, each ingredient with a swap arrow, two lines already ticked" width="440"></td>
   </tr>
   <tr>
     <td align="center"><sub>Nothing cooking: search, then pick under <b>Matches</b></sub></td>
-    <td align="center"><sub>The entities, and the shared shopping list as a to-do</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/screenshots/receiver-ingredients.webp" alt="The live cook display opened on its Ingredients page inside the dashboard: ½× / 1× / 2× / 3× scale chips, each ingredient with a swap arrow, two lines already ticked" width="440"></td>
-    <td align="center"><img src="docs/screenshots/display-pairing.webp" alt="The live cook display waiting for a phone: the weReci mark and a six-letter pairing code above 'Enter this code in Cook Mode'" width="440"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>The frame takes taps like the screen does: scale, swap, tick</sub></td>
-    <td align="center"><sub>Waiting for a phone: the code on the display, the link on your phone</sub></td>
+    <td align="center"><sub>Cooking: the frame takes taps like the screen does</sub></td>
   </tr>
 </table>
 
-**A “now cooking” tile for your own dashboard.** `image.…_cooking` is the picture that panel uses: the weReci mark when idle, the pairing code while it waits for a phone, the recipe's photo while cooking (its title, when it has no photo). It is pushed when the recipe changes, not polled. With Home Assistant's stock [picture-glance card](https://www.home-assistant.io/dashboards/picture-glance/) — no iframe, no custom cards, so it also works in the companion apps and on wall tablets — paste this, with your own entity ids:
+<details>
+<summary><b>Don't want the dashboard, or want only one tab?</b></summary>
+<br>
+
+*Settings → Devices & services → weReci → the gear on the account* has a checkbox for each tab: **Cook page** and **Shopping list page**. Turn both off and the dashboard leaves the sidebar. Entities, voice and cook displays keep working.
+
+Home Assistant also adds its own **To-do lists** sidebar entry whenever any to-do entity exists. If you'd rather not have two doors to the same list: *Settings → Dashboards → To-do lists → Show in sidebar* turns that one off.
+</details>
+
+## Cook Mode on a screen
+
+One action puts weReci's cook display on a screen. Your phone gets a notification with a link; tap it and the screen follows your phone through the recipe, scaling and swaps included.
+
+```yaml
+action: wereci.show_cook_display
+data:
+  entity_id: media_player.kitchen_display   # Cast, Android TV or Fire TV
+  recipe: carrot soup                        # optional: start on this recipe
+```
+
+Three ways to run a cook:
+
+- **Phone-driven** (default). The screen mirrors whatever your phone's Cook Mode shows. If the notification never arrives, the 6-letter code on the screen works too, for 10 minutes.
+- **Start on a recipe.** Add `recipe` (a name) or `recipe_id`. The notification opens Cook Mode on that recipe directly, so one tap and the screen is cooking.
+- **No phone at all.** Add `without_phone: true`. Home Assistant runs the cook itself: step 1 goes on the screen, and taps, step buttons and voice all drive it. No notification is sent.
+
+Stop with `wereci.stop_cook_display`, or just close Cook Mode on the phone.
+
+<p align="center">
+  <img src="docs/screenshots/display-pairing.webp" alt="The live cook display waiting for a phone: the weReci mark and a six-letter pairing code above 'Enter this code in Cook Mode'" width="440"><br>
+  <sub>Waiting for a phone: the code on the display, the link on your phone</sub>
+</p>
+
+<details>
+<summary><b>About recipe names</b></summary>
+<br>
+
+weReci's search always finds the *nearest* recipe, so a name has to resemble the recipe's title. If nothing resembles it, the action refuses and lists the closest titles. Pass `allow_closest: true` to cook the nearest match anyway, or use `recipe_id`.
+
+An assistant with the weReci tools can chain this after a search: "find me a soup and put it on the kitchen display."
+</details>
+
+<details>
+<summary><b>Scaling, swaps and Break it down from the screen</b></summary>
+<br>
+
+**Scale** the recipe and **swap** a missing ingredient right on the screen. These are weReci's own AI runs, counted against your allowance the same as in the app. They need the `cook:assist` permission; if you connected before it existed, the first scale or swap asks you to sign in to weReci again and approve the new line.
+
+**Break it down** shows a breakdown that already exists on the recipe. Home Assistant never generates one, because that would write new steps to your collection, and this connection is never allowed to change your recipes.
+
+The "new at this step" ingredient rail is the one thing a phone-driven cook has that a phone-free cook doesn't.
+</details>
+
+<details>
+<summary><b>Supported screens</b></summary>
+<br>
+
+| Target | How it is shown | Needs |
+|---|---|---|
+| Cast device (Nest Hub, Chromecast) | `cast.show_lovelace_view` | Home Assistant over **https** (Nabu Casa or your own domain) |
+| `browser_mod` browser | `browser_mod.navigate` | [browser_mod](https://github.com/thomasloven/hass-browser_mod); pass `browser_id` instead of `entity_id` |
+| Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
+| Android TV Remote | `media_player.play_media` (url) | nothing else |
+
+`notify:` picks which phones get the link (default: every mobile app). Cast and browser_mod screens are shown a hidden full-screen view in the weReci dashboard. It points at a local address, `display_path` on `sensor.…_cooking`, that forwards to the live cook display. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the step being cooked, and nothing else. To lay it out yourself, put a webpage card on `display_path` in any dashboard and pass `dashboard_path` / `view_path` to the action.
+</details>
+
+## The shopping list
+
+Your List It list shows up as `todo.…` in Home Assistant. Tick, add, rename and remove lines from a dashboard or by voice; your phones see the change, and the other way round. Home Assistant checks for changes every 30 seconds.
+
+**Only a shared list syncs.** weReci keeps a list on its servers only when you share it with your cookbook partner. A list that lives only on your phone stays on your phone.
+
+<p align="center">
+  <img src="docs/screenshots/entities-and-shopping-list.webp" alt="The integration's entities on the device page beside the synced shopping list as a to-do card" width="440"><br>
+  <sub>The entities, and the shared shopping list as a to-do</sub>
+</p>
+
+<details>
+<summary><b>Why is the list <code>unavailable</code>?</b></summary>
+<br>
+
+The entity's `reason` attribute says why:
+
+| `reason` | Meaning |
+|---|---|
+| `no_synced_list` | This account has no shared list. |
+| `not_shared` | A shared list exists, but you haven't joined it. Join from List It in the app. |
+| `permission_required` | The shopping-list permission wasn't approved. Remove and re-add the integration. |
+| `unavailable` | weReci couldn't be reached. |
+
+Renaming a line replaces it, because weReci keys a line on its ingredient.
+</details>
+
+## Build your own
+
+Everything the dashboard does is available to your own cards and automations.
+
+<details>
+<summary><b>Entities</b></summary>
+<br>
+
+| Entity | What it is |
+|---|---|
+| `sensor.…_cooking` | `idle` / `waiting` / `cooking`. Attributes: `title`, `step`, `total_steps`, `step_text`, `ingredients`, `driven_by` (phone or Home Assistant), `display_path`. While waiting: `code` and `link`, handy for an NFC-tag automation. |
+| `image.…_cooking` | The picture the dashboard shows: the weReci mark when idle, the pairing code while waiting, the recipe's photo (or title) while cooking. Pushed on change, not polled. |
+| `button.…_next_step`, `button.…_previous_step` | Step controls, active while cooking. |
+| `todo.…_ingredients` | The recipe's ingredients while cooking, unavailable otherwise. Completing an item ticks it on the screen. Works in any to-do card or by voice. |
+| `select.…_matches` | The dashboard's search. Attributes: `query`, `searching`, `error`, `recipe_id` (the pick) and `matches` (`id`, `title`, `cuisine`, `cookbook`). |
+| `todo.…` (shopping list) | Your shared List It list. |
+
+**Actions:** `wereci.show_cook_display`, `wereci.stop_cook_display`, and `wereci.toggle_ingredient` (`index` from the sensor's `ingredients` list). The show action returns `{code, link}`, plus `recipe_id` and `title` when a recipe was given, when called with a response variable.
+</details>
+
+<details>
+<summary><b>A "now cooking" tile with the stock picture-glance card</b></summary>
+<br>
+
+No iframe, no custom cards, so it also works in the companion apps and on wall tablets. Paste this with your own entity ids:
 
 ```yaml
 type: picture-glance
@@ -174,19 +221,14 @@ entities:
       perform_action: wereci.stop_cook_display
 ```
 
-The card's `title` is fixed text, not a template, so it cannot name the recipe; the step's words are on `sensor.…_cooking` (`title`, `step`, `total_steps`, `step_text`) for a markdown card beside it. The picture is for glancing and stepping — the kitchen screen itself still shows the live receiver.
+The card's `title` is fixed text, so it can't name the recipe. Put a markdown card beside it that reads `title` and `step_text` from `sensor.…_cooking`.
+</details>
 
-Don't want a page? **Settings → Devices & services → weReci → the gear on the account** has a checkbox for each one: *Cook page* and *Shopping list page*. They are independent — keep either on its own. Turn both off and the dashboard leaves the sidebar; the entities, voice and cook displays are untouched, because the checkboxes pick pages, not features.
+<details>
+<summary><b>Voice step control without an LLM</b></summary>
+<br>
 
-Home Assistant also adds its own **To-do lists** entry to the sidebar the moment any to-do entity exists — weReci's included. With the shopping list a tab in the weReci dashboard you may not want two doors: **Settings → Dashboards → To-do lists → Show in sidebar** turns that one off for everyone. The lists themselves, the stock to-do card and voice all keep working; it is only the sidebar entry.
-
-Rather lay it out yourself? Put a webpage card on `display_path` in any dashboard and pass `dashboard_path` / `view_path` to the service. A dashboard of your own at `/wereci-cook` is left alone.
-
-`wereci.stop_cook_display` closes it and gives the screen back; closing Cook Mode on the phone does the same.
-
-**Entities:** `sensor.…_cooking` is `idle` / `waiting` / `cooking`, with `title`, `step`, `total_steps` and `step_text` (and `code` + `link` while waiting — handy for an NFC tag automation). `button.…_next_step` and `button.…_previous_step` work while cooking. `todo.…_ingredients` is the recipe's ingredient list while cooking (unavailable otherwise): completing or un-completing an item ticks it on the screen, and it works in any stock to-do card or by voice; `wereci.toggle_ingredient` (`index`, from the sensor's `ingredients` list) does the same from an automation. `driven_by` says whether a phone or Home Assistant is running the cook.
-
-**Voice, without an LLM:** add `config/custom_sentences/en/wereci.yaml`:
+Add `config/custom_sentences/en/wereci.yaml`:
 
 ```yaml
 language: en
@@ -198,12 +240,13 @@ intents:
     data:
       - sentences: ["previous step", "go back a step"]
 ```
-
-The show service also returns `{code, link}` (plus `recipe_id` and `title` when a recipe was given) when called with a response variable.
+</details>
 
 ## How it connects
 
-OAuth 2.1 with PKCE — no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync cook:assist`. It can never add, change, or delete recipes in your collection. The cook display uses weReci's public pair-by-code relay instead: Home Assistant holds a token for one short-lived display channel and never sees your recipes — only the step your phone chooses to show.
+OAuth 2.1 with PKCE, no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync cook:assist`. **It can never add, change or delete recipes in your collection.**
+
+The cook display uses weReci's public pair-by-code relay instead. Home Assistant holds a token for one short-lived display channel and never sees your recipes, only the step your phone chooses to show.
 
 Home Assistant's built-in Model Context Protocol integration can't be used instead: it requires a client secret and doesn't send a PKCE challenge, and weReci only accepts public PKCE clients.
 
