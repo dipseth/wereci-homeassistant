@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "weReci 로그인하기"
+      },
+      "reauth_confirm": {
+        "title": "weReci에 다시 로그인하기",
+        "description": "weReci에 다시 로그인해야 해요 — 로그인이 만료되었거나, 이 연결에 아직 없는 권한이 필요한 새 기능(요리 화면에서 배율 조정과 재료 교체) 때문이에요."
+      }
+    },
+    "abort": {
+      "already_configured": "이 weReci 계정은 이미 연결되어 있어요.",
+      "cannot_connect": "weReci에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.",
+      "registration_refused": "weReci가 이 Home Assistant를 등록할 수 없어요. https로 접근 가능하거나 My Home Assistant가 활성화되어 있어야 해요.",
+      "no_account": "weReci에 로그인했지만 어떤 계정인지 알 수 없어요. 다시 시도해 주세요.",
+      "wrong_account": "이 항목을 설정할 때 사용한 것과 같은 weReci 계정으로 로그인해 주세요.",
+      "reauth_successful": "다시 로그인했어요.",
+      "authorize_url_timeout": "weReci 로그인 페이지를 여는 중 시간이 초과되었어요.",
+      "missing_configuration": "weReci 로그인이 설정되지 않았어요. 통합을 다시 추가해 보세요.",
+      "oauth_error": "weReci가 잘못된 로그인 응답을 반환했어요.",
+      "oauth_failed": "weReci 로그인에 실패했어요.",
+      "oauth_timeout": "weReci 로그인을 완료하는 중 시간이 초과되었어요.",
+      "oauth_unauthorized": "weReci가 이 연결을 승인하지 않았어요.",
+      "user_rejected_authorize": "weReci에서 연결을 거절하셨어요."
+    },
+    "create_entry": {
+      "default": "연결되었어요. 음성이나 채팅으로 레시피 도구를 사용하려면: 설정 → 음성 비서 → 사용 중인 비서 → 대화 에이전트 옆의 톱니바퀴 → Home Assistant 제어에서 weReci에 체크하세요. 장보기 목록 엔티티는 weReci에서 공유하는 목록을 보여줘요."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "weReci 대시보드 페이지",
+        "description": "각각 하나의 페이지예요. 둘 다 끄면 대시보드가 사이드바에서 사라지지만, 엔티티, 음성, 요리 화면은 어느 쪽이든 계속 작동해요.",
+        "data": {
+          "shopping_list": "장보기 목록 페이지",
+          "control_panel": "요리 페이지"
+        },
+        "data_description": {
+          "shopping_list": "동기화된 weReci 목록을 대시보드 페이지로 보여줘요. 할 일 엔티티는 설정과 관계없이 유지돼요.",
+          "control_panel": "요리를 시작하고 단계를 따라가며 화면을 확인해요."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "장보기 목록"
+      },
+      "ingredients": {
+        "name": "재료"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "다음 단계"
+      },
+      "previous_step": {
+        "name": "이전 단계"
+      },
+      "start_cooking": {
+        "name": "요리 시작"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "요리 중"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "요리 중",
+        "state": {
+          "idle": "대기 중",
+          "waiting": "폰 대기 중",
+          "cooking": "요리 중"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "레시피"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "화면"
+      },
+      "matches": {
+        "name": "일치"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "폰 없이"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "요리 화면 보기",
+      "description": "weReci 요리 모드 화면을 스크린에 띄우고 페어링 링크를 폰으로 보내요. 폰으로 화면을 조작해요.",
+      "fields": {
+        "entity_id": {
+          "name": "미디어 플레이어",
+          "description": "Cast 기기(Nest Hub, Chromecast), Android TV 또는 Fire TV예요."
+        },
+        "browser_id": {
+          "name": "브라우저 ID",
+          "description": "browser_mod 브라우저, 예를 들어 벽에 부착된 태블릿이에요. 미디어 플레이어 대신 사용해요."
+        },
+        "notify": {
+          "name": "알림",
+          "description": "페어링 링크를 보낼 알림 서비스예요. 기본값: 모든 모바일 앱."
+        },
+        "dashboard_path": {
+          "name": "대시보드 경로",
+          "description": "화면용으로 직접 대시보드를 만든 경우에만 설정해요. 기본값: weReci가 제공하는 대시보드예요."
+        },
+        "view_path": {
+          "name": "보기 경로",
+          "description": "직접 만든 대시보드에서만: 웹페이지 카드가 있는 보기예요."
+        },
+        "return_path": {
+          "name": "돌아갈 경로",
+          "description": "화면이 종료될 때 browser_mod 브라우저가 이동할 위치예요."
+        },
+        "config_entry_id": {
+          "name": "계정",
+          "description": "여러 weReci 계정이 설정된 경우, 사용할 계정이에요."
+        },
+        "recipe": {
+          "name": "레시피",
+          "description": "이름으로 열 레시피예요. 레시피 제목과 비슷해야 해요 (최근접 일치 허용 참조)."
+        },
+        "recipe_id": {
+          "name": "레시피 ID",
+          "description": "weReci id로 열 레시피예요 (레시피 도구가 반환하는 id). 이름 대신 사용해요."
+        },
+        "without_phone": {
+          "name": "폰 없이",
+          "description": "Home Assistant가 요리를 직접 진행해요: 폰도 알림도 없어요. 레시피가 필요해요. 배율 조정과 재료 교체는 화면에서 작동해요 (weReci AI 할당량이 사용돼요); 레시피가 앱에서 이미 분해된 경우 '분해하기'가 제공돼요."
+        },
+        "allow_closest": {
+          "name": "최근접 일치 허용",
+          "description": "weReci 검색은 맞는 것이 없어도 항상 가장 가까운 레시피를 찾아요. 꺼짐(기본값): 이름이 레시피 제목과 비슷해야 하고, 그렇지 않으면 작업이 거부돼요. 켜짐: 가장 가까운 일치 항목을 그냥 요리해요."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "요리 화면 중지",
+      "description": "요리 화면을 닫고 스크린을 돌려줘요.",
+      "fields": {
+        "config_entry_id": {
+          "name": "계정",
+          "description": "여러 weReci 계정이 설정된 경우, 사용할 계정이에요."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "재료 체크",
+      "description": "요리 화면에서 재료 하나를 체크하거나 체크 해제해요.",
+      "fields": {
+        "index": {
+          "name": "인덱스",
+          "description": "센서의 재료 목록에서의 위치이며, 0부터 시작해요."
+        },
+        "config_entry_id": {
+          "name": "계정",
+          "description": "여러 weReci 계정이 설정된 경우, 사용할 계정이에요."
+        }
+      }
+    }
+  }
+}

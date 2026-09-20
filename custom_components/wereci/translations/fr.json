@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Se connecter à weReci"
+      },
+      "reauth_confirm": {
+        "title": "Se reconnecter à weReci",
+        "description": "weReci vous demande de vous reconnecter — la connexion a expiré, ou une nouvelle fonctionnalité requiert une autorisation que cette connexion n'a pas encore (portionnement et substitutions sur l'affichage de cuisson)."
+      }
+    },
+    "abort": {
+      "already_configured": "Ce compte weReci est déjà connecté.",
+      "cannot_connect": "weReci est injoignable. Réessayez dans un instant.",
+      "registration_refused": "weReci n'a pas pu enregistrer ce Home Assistant. Il doit être accessible en https, ou avoir My Home Assistant activé.",
+      "no_account": "weReci vous a connecté mais n'a pas indiqué quel compte. Réessayez.",
+      "wrong_account": "Connectez-vous avec le même compte weReci que celui utilisé pour configurer cette entrée.",
+      "reauth_successful": "Reconnecté.",
+      "authorize_url_timeout": "Délai dépassé lors de l'ouverture de la page de connexion weReci.",
+      "missing_configuration": "La connexion weReci n'est pas configurée. Essayez d'ajouter l'intégration à nouveau.",
+      "oauth_error": "weReci a renvoyé une réponse de connexion invalide.",
+      "oauth_failed": "La connexion à weReci a échoué.",
+      "oauth_timeout": "Délai dépassé lors de la finalisation de la connexion weReci.",
+      "oauth_unauthorized": "weReci n'a pas autorisé cette connexion.",
+      "user_rejected_authorize": "Vous avez refusé la connexion dans weReci."
+    },
+    "create_entry": {
+      "default": "Connecté. Pour utiliser les outils de recette par voix ou chat : Paramètres → Assistants vocaux → votre assistant → l'engrenage à côté de l'agent de Conversation → sous Contrôler Home Assistant, cochez weReci. L'entité liste de courses affiche la liste que vous partagez dans weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pages du tableau de bord weReci",
+        "description": "Une page chacun. Désactivez les deux et le tableau de bord quitte la barre latérale ; vos entités, affichages vocaux et de cuisson continuent de fonctionner dans les deux cas.",
+        "data": {
+          "shopping_list": "Page liste de courses",
+          "control_panel": "Page de cuisson"
+        },
+        "data_description": {
+          "shopping_list": "Votre liste weReci synchronisée, en page sur le tableau de bord. L'entité to-do reste présente dans les deux cas.",
+          "control_panel": "Lancez une cuisson, parcourez-la étape par étape, et suivez l'écran."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Liste de courses"
+      },
+      "ingredients": {
+        "name": "Ingrédients"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Étape suivante"
+      },
+      "previous_step": {
+        "name": "Étape précédente"
+      },
+      "start_cooking": {
+        "name": "Commencer la cuisson"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Cuisson"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Cuisson",
+        "state": {
+          "idle": "Inactif",
+          "waiting": "En attente du téléphone",
+          "cooking": "Cuisson"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Recette"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Écran"
+      },
+      "matches": {
+        "name": "Correspondances"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Sans téléphone"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Afficher l'affichage de cuisson",
+      "description": "Mettez l'affichage du Mode Cuisson weReci sur un écran et envoyez le lien d'appairage à votre téléphone. Le téléphone le pilote.",
+      "fields": {
+        "entity_id": {
+          "name": "Lecteur multimédia",
+          "description": "Un appareil Cast (Nest Hub, Chromecast), Android TV ou Fire TV."
+        },
+        "browser_id": {
+          "name": "Identifiant du navigateur",
+          "description": "Un navigateur browser_mod, par exemple une tablette murale. À utiliser à la place d'un lecteur multimédia."
+        },
+        "notify": {
+          "name": "Notifier",
+          "description": "Services de notification auxquels envoyer le lien d'appairage. Par défaut : toutes les applications mobiles."
+        },
+        "dashboard_path": {
+          "name": "Chemin du tableau de bord",
+          "description": "Uniquement si vous avez créé votre propre tableau de bord pour l'affichage. Par défaut : celui fourni par weReci."
+        },
+        "view_path": {
+          "name": "Chemin de la vue",
+          "description": "Uniquement avec votre propre tableau de bord : la vue contenant la carte page web."
+        },
+        "return_path": {
+          "name": "Chemin de retour",
+          "description": "Où un navigateur browser_mod revient lorsque l'affichage s'arrête."
+        },
+        "config_entry_id": {
+          "name": "Compte",
+          "description": "Quel compte weReci, si plusieurs sont configurés."
+        },
+        "recipe": {
+          "name": "Recette",
+          "description": "Une recette à ouvrir, par nom. Il doit ressembler au titre de la recette (voir Autoriser la correspondance la plus proche)."
+        },
+        "recipe_id": {
+          "name": "Identifiant de recette",
+          "description": "Une recette à ouvrir, par son identifiant weReci (tel que renvoyé par les outils de recette). À utiliser à la place d'un nom."
+        },
+        "without_phone": {
+          "name": "Sans téléphone",
+          "description": "Home Assistant exécute la cuisson lui-même : pas de téléphone, pas de notification. Nécessite une recette. Le portionnement et les substitutions fonctionnent depuis l'écran (ils utilisent votre quota d'IA weReci) ; l'option Décomposer est proposée lorsque la recette a déjà été décomposée dans l'application."
+        },
+        "allow_closest": {
+          "name": "Autoriser la correspondance la plus proche",
+          "description": "La recherche de weReci trouve toujours la recette la plus proche, même quand rien ne correspond. Désactivé (par défaut) : un nom doit ressembler au titre de la recette, sinon l'action est refusée. Activé : cuisiner quand même la correspondance la plus proche."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Arrêter l'affichage de cuisson",
+      "description": "Fermer l'affichage de cuisson et rendre l'écran.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Compte",
+          "description": "Quel compte weReci, si plusieurs sont configurés."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Cocher l'ingrédient",
+      "description": "Cocher ou décocher un ingrédient sur l'affichage de cuisson.",
+      "fields": {
+        "index": {
+          "name": "Indice",
+          "description": "Position dans la liste d'ingrédients du capteur, à partir de 0."
+        },
+        "config_entry_id": {
+          "name": "Compte",
+          "description": "Quel compte weReci, si plusieurs sont configurés."
+        }
+      }
+    }
+  }
+}

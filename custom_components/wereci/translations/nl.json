@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Inloggen bij weReci"
+      },
+      "reauth_confirm": {
+        "title": "Opnieuw inloggen bij weReci",
+        "description": "weReci wil dat je opnieuw inlogt — de sessie is verlopen, of een nieuwe functie vereist een toestemming die deze verbinding nog niet heeft (schalen en vervangingen op het kookscherm)."
+      }
+    },
+    "abort": {
+      "already_configured": "Dit weReci-account is al verbonden.",
+      "cannot_connect": "weReci kon niet worden bereikt. Probeer het zo nog eens.",
+      "registration_refused": "weReci kon deze Home Assistant niet registreren. Het moet bereikbaar zijn via https, of My Home Assistant ingeschakeld hebben.",
+      "no_account": "weReci heeft je ingelogd, maar niet gezegd welk account. Probeer het opnieuw.",
+      "wrong_account": "Log in met hetzelfde weReci-account waarmee dit item is ingesteld.",
+      "reauth_successful": "Opnieuw ingelogd.",
+      "authorize_url_timeout": "Time-out bij het openen van de weReci-inlogpagina.",
+      "missing_configuration": "weReci-inloggen is niet ingesteld. Probeer de integratie opnieuw toe te voegen.",
+      "oauth_error": "weReci gaf een ongeldig inlogantwoord.",
+      "oauth_failed": "weReci-inloggen mislukt.",
+      "oauth_timeout": "Time-out bij het voltooien van het weReci-inloggen.",
+      "oauth_unauthorized": "weReci heeft deze verbinding niet geautoriseerd.",
+      "user_rejected_authorize": "Je hebt de verbinding in weReci geweigerd."
+    },
+    "create_entry": {
+      "default": "Verbonden. Om de recepttools met stem of chat te gebruiken: Instellingen → Spraakassistenten → je assistent → het tandwielpictogram naast Conversatieagent → onder Home Assistant bedienen, weReci aanvinken. De boodschappenlijst-entiteit toont de lijst die je deelt in weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "weReci-dashboardpagina's",
+        "description": "Elk een pagina. Zet beide uit en het dashboard verdwijnt uit de zijbalk; je entiteiten, stem en kookschermen blijven in beide gevallen werken.",
+        "data": {
+          "shopping_list": "Boodschappenlijstpagina",
+          "control_panel": "Kookpagina"
+        },
+        "data_description": {
+          "shopping_list": "Je gesynchroniseerde weReci-lijst, als pagina op het dashboard. De to-do-entiteit is er in beide gevallen.",
+          "control_panel": "Start een kooksessie, doorloop de stappen en volg het scherm."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Boodschappenlijst"
+      },
+      "ingredients": {
+        "name": "Ingrediënten"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Volgende stap"
+      },
+      "previous_step": {
+        "name": "Vorige stap"
+      },
+      "start_cooking": {
+        "name": "Starten met koken"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Koken"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Koken",
+        "state": {
+          "idle": "Inactief",
+          "waiting": "Wachten op telefoon",
+          "cooking": "Koken"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Recept"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Scherm"
+      },
+      "matches": {
+        "name": "Overeenkomsten"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Zonder telefoon"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Kookscherm tonen",
+      "description": "Zet het scherm van weReci Kookmodus op een display en stuur de koppelingslink naar je telefoon. De telefoon bestuurt het.",
+      "fields": {
+        "entity_id": {
+          "name": "Mediaspeler",
+          "description": "Een Cast-apparaat (Nest Hub, Chromecast), Android TV of Fire TV."
+        },
+        "browser_id": {
+          "name": "Browser-ID",
+          "description": "Een browser_mod-browser, bijv. een tablet aan de muur. Gebruik dit in plaats van een mediaspeler."
+        },
+        "notify": {
+          "name": "Meldingen",
+          "description": "Meldservices om de koppelingslink naartoe te sturen. Standaard: elke mobiele app."
+        },
+        "dashboard_path": {
+          "name": "Dashboard-pad",
+          "description": "Alleen als je je eigen dashboard voor het scherm hebt gebouwd. Standaard: degene die weReci biedt."
+        },
+        "view_path": {
+          "name": "Weergavepad",
+          "description": "Alleen bij je eigen dashboard: de weergave die de webpagina-kaart bevat."
+        },
+        "return_path": {
+          "name": "Terugkeerpad",
+          "description": "Waar een browser_mod-browser naartoe gaat wanneer het scherm stopt."
+        },
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Welk weReci-account, als er meer dan één is ingesteld."
+        },
+        "recipe": {
+          "name": "Recept",
+          "description": "Een recept om te openen, op naam. Het moet lijken op de titel van het recept (zie Dichtstbijzijnde overeenkomst toestaan)."
+        },
+        "recipe_id": {
+          "name": "Recept-ID",
+          "description": "Een recept om te openen, op zijn weReci-id (zoals de recepttools het retourneren). Gebruik dit in plaats van een naam."
+        },
+        "without_phone": {
+          "name": "Zonder telefoon",
+          "description": "Home Assistant draait de kooksessie zelf: geen telefoon, geen melding. Vereist een recept. Schalen en vervangingen werken vanaf het scherm (ze gebruiken je weReci-AI-tegoed); 'Opsplitsen' wordt aangeboden wanneer het recept al was opgesplitst in de app."
+        },
+        "allow_closest": {
+          "name": "Dichtstbijzijnde overeenkomst toestaan",
+          "description": "De zoekfunctie van weReci vindt altijd het dichtstbijzijnde recept, zelfs als er niets past. Uit (standaard): een naam moet lijken op de titel van het recept, anders weigert de actie. Aan: kook de dichtstbijzijnde overeenkomst toch."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Kookscherm stoppen",
+      "description": "Sluit het kookscherm en geef het scherm vrij.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Welk weReci-account, als er meer dan één is ingesteld."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Ingrediënt aanvinken",
+      "description": "Vink één ingrediënt op het kookscherm aan of uit.",
+      "fields": {
+        "index": {
+          "name": "Index",
+          "description": "Positie in de ingrediëntenlijst van de sensor, beginnend bij 0."
+        },
+        "config_entry_id": {
+          "name": "Account",
+          "description": "Welk weReci-account, als er meer dan één is ingesteld."
+        }
+      }
+    }
+  }
+}

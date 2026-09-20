@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Bei weReci anmelden"
+      },
+      "reauth_confirm": {
+        "title": "Wieder bei weReci anmelden",
+        "description": "weReci muss dich erneut anmelden — entweder ist die Anmeldung abgelaufen, oder eine neue Funktion benötigt eine Berechtigung, die diese Verbindung noch nicht hat (Skalierung und Austausch in der Kochanzeige)."
+      }
+    },
+    "abort": {
+      "already_configured": "Dieses weReci-Konto ist bereits verbunden.",
+      "cannot_connect": "weReci konnte nicht erreicht werden. Versuch es gleich noch einmal.",
+      "registration_refused": "weReci konnte dieses Home Assistant nicht registrieren. Es muss über https erreichbar sein oder My Home Assistant aktiviert haben.",
+      "no_account": "weReci hat dich angemeldet, aber kein Konto genannt. Versuch es noch einmal.",
+      "wrong_account": "Melde dich mit demselben weReci-Konto an, mit dem dieser Eintrag eingerichtet wurde.",
+      "reauth_successful": "Wieder angemeldet.",
+      "authorize_url_timeout": "Zeitüberschreitung beim Öffnen der weReci-Anmeldeseite.",
+      "missing_configuration": "Die weReci-Anmeldung ist nicht eingerichtet. Versuch, die Integration erneut hinzuzufügen.",
+      "oauth_error": "weReci hat eine ungültige Anmeldeantwort zurückgegeben.",
+      "oauth_failed": "weReci-Anmeldung fehlgeschlagen.",
+      "oauth_timeout": "Zeitüberschreitung beim Abschließen der weReci-Anmeldung.",
+      "oauth_unauthorized": "weReci hat diese Verbindung nicht autorisiert.",
+      "user_rejected_authorize": "Du hast die Verbindung in weReci abgelehnt."
+    },
+    "create_entry": {
+      "default": "Verbunden. Um die Rezept-Werkzeuge per Sprache oder Chat zu nutzen: Einstellungen → Sprachassistenten → dein Assistent → das Zahnrad neben Konversations-Agent → unter Home Assistant steuern weReci ankreuzen. Die Einkaufslisten-Entität zeigt die Liste, die du in weReci teilst."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "weReci-Dashboard-Seiten",
+        "description": "Jeweils eine Seite. Schalte beide aus und das Dashboard verschwindet aus der Seitenleiste; deine Entitäten, Sprachsteuerung und Kochanzeigen funktionieren weiterhin.",
+        "data": {
+          "shopping_list": "Einkaufslisten-Seite",
+          "control_panel": "Koch-Seite"
+        },
+        "data_description": {
+          "shopping_list": "Deine synchronisierte weReci-Liste als Seite im Dashboard. Die To-do-Entität ist sowieso da.",
+          "control_panel": "Starte einen Kochvorgang, gehe ihn Schritt für Schritt durch und beobachte den Bildschirm."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Einkaufsliste"
+      },
+      "ingredients": {
+        "name": "Zutaten"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Nächster Schritt"
+      },
+      "previous_step": {
+        "name": "Vorheriger Schritt"
+      },
+      "start_cooking": {
+        "name": "Kochen starten"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Kochen"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Kochen",
+        "state": {
+          "idle": "Leerlauf",
+          "waiting": "Warte auf Telefon",
+          "cooking": "Kochen"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Rezept"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Bildschirm"
+      },
+      "matches": {
+        "name": "Treffer"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Ohne Telefon"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Kochanzeige zeigen",
+      "description": "Zeige die Anzeige des weReci-Kochmodus auf einem Bildschirm und sende den Pairing-Link an dein Telefon. Das Telefon steuert sie.",
+      "fields": {
+        "entity_id": {
+          "name": "Mediaplayer",
+          "description": "Ein Cast-Gerät (Nest Hub, Chromecast), Android TV oder Fire TV."
+        },
+        "browser_id": {
+          "name": "Browser-ID",
+          "description": "Ein browser_mod-Browser, z. B. ein Tablet an der Wand. Verwende dies statt eines Mediaplayers."
+        },
+        "notify": {
+          "name": "Benachrichtigen",
+          "description": "Benachrichtigungsdienste, an die der Pairing-Link gesendet wird. Standard: jede mobile App."
+        },
+        "dashboard_path": {
+          "name": "Dashboard-Pfad",
+          "description": "Nur wenn du dein eigenes Dashboard für die Anzeige gebaut hast. Standard: das von weReci bereitgestellte."
+        },
+        "view_path": {
+          "name": "Ansichtspfad",
+          "description": "Nur mit deinem eigenen Dashboard: die Ansicht, die die Webseiten-Karte enthält."
+        },
+        "return_path": {
+          "name": "Rückkehrpfad",
+          "description": "Wohin ein browser_mod-Browser geht, wenn die Anzeige stoppt."
+        },
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Welches weReci-Konto, falls mehr als eines eingerichtet ist."
+        },
+        "recipe": {
+          "name": "Rezept",
+          "description": "Ein Rezept, das nach Namen geöffnet wird. Es muss dem Titel des Rezepts ähneln (siehe Nächsten Treffer zulassen)."
+        },
+        "recipe_id": {
+          "name": "Rezept-ID",
+          "description": "Ein Rezept, das nach seiner weReci-ID geöffnet wird (wie die Rezept-Werkzeuge es zurückgeben). Verwende dies statt eines Namens."
+        },
+        "without_phone": {
+          "name": "Ohne Telefon",
+          "description": "Home Assistant führt den Kochvorgang selbst aus: kein Telefon, keine Benachrichtigung. Benötigt ein Rezept. Skalierung und Austausch funktionieren vom Bildschirm aus (sie nutzen dein weReci-KI-Kontingent); „Aufschlüsseln\" wird angeboten, wenn das Rezept bereits in der App aufgeschlüsselt wurde."
+        },
+        "allow_closest": {
+          "name": "Nächsten Treffer zulassen",
+          "description": "weRecis Suche findet immer das nächste Rezept, selbst wenn nichts passt. Aus (Standard): ein Name muss dem Titel des Rezepts ähneln oder die Aktion wird abgelehnt. An: koche trotzdem den nächsten Treffer."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Kochanzeige stoppen",
+      "description": "Schließe die Kochanzeige und gib den Bildschirm frei.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Welches weReci-Konto, falls mehr als eines eingerichtet ist."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Zutat ankreuzen",
+      "description": "Eine Zutat in der Kochanzeige an- oder abkreuzen.",
+      "fields": {
+        "index": {
+          "name": "Index",
+          "description": "Position in der Zutatenliste des Sensors, beginnend bei 0."
+        },
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Welches weReci-Konto, falls mehr als eines eingerichtet ist."
+        }
+      }
+    }
+  }
+}

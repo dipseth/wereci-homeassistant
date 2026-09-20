@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "weReciにサインイン"
+      },
+      "reauth_confirm": {
+        "title": "weReciに再度サインイン",
+        "description": "weReciに再度サインインが必要です — サインインの有効期限が切れたか、新しい機能がこの接続にまだない権限を必要としています（調理画面での分量変更と材料の差し替え）。"
+      }
+    },
+    "abort": {
+      "already_configured": "このweReciアカウントはすでに接続されています。",
+      "cannot_connect": "weReciに接続できませんでした。しばらくしてから再試行してください。",
+      "registration_refused": "weReciがこのHome Assistantを登録できませんでした。httpsでアクセスできるか、My Home Assistantが有効になっている必要があります。",
+      "no_account": "weReciにサインインしましたが、アカウントが特定できませんでした。再度お試しください。",
+      "wrong_account": "このエントリの設定に使用したweReciアカウントでサインインしてください。",
+      "reauth_successful": "再度サインインしました。",
+      "authorize_url_timeout": "weReciのサインインページを開く際にタイムアウトしました。",
+      "missing_configuration": "weReciのサインインが設定されていません。インテグレーションを再度追加してください。",
+      "oauth_error": "weReciから無効なサインイン応答が返されました。",
+      "oauth_failed": "weReciのサインインに失敗しました。",
+      "oauth_timeout": "weReciのサインイン完了時にタイムアウトしました。",
+      "oauth_unauthorized": "weReciがこの接続を認証しませんでした。",
+      "user_rejected_authorize": "weReciで接続を拒否しました。"
+    },
+    "create_entry": {
+      "default": "接続しました。音声またはチャットでレシピツールを使うには：設定 → 音声アシスタント → 使用するアシスタント → 会話エージェントの横の歯車アイコン → Home Assistantの制御でweReciにチェックを入れます。ショッピングリストエンティティはweReciで共有しているリストを表示します。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "weReciダッシュボードページ",
+        "description": "それぞれ1ページです。両方をオフにするとダッシュボードはサイドバーから消えますが、エンティティ、音声、調理画面はいずれの場合も動き続けます。",
+        "data": {
+          "shopping_list": "ショッピングリストページ",
+          "control_panel": "調理ページ"
+        },
+        "data_description": {
+          "shopping_list": "同期したweReciリストをダッシュボードのページとして表示します。To-doエンティティはいずれの場合も存在します。",
+          "control_panel": "調理を開始し、ステップを進めながら画面を見ます。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "ショッピングリスト"
+      },
+      "ingredients": {
+        "name": "材料"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "次のステップ"
+      },
+      "previous_step": {
+        "name": "前のステップ"
+      },
+      "start_cooking": {
+        "name": "調理を開始"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "調理中"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "調理中",
+        "state": {
+          "idle": "待機中",
+          "waiting": "スマートフォン待機中",
+          "cooking": "調理中"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "レシピ"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "画面"
+      },
+      "matches": {
+        "name": "一致"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "スマートフォンなし"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "調理画面を表示",
+      "description": "weReciの調理モードの画面をスクリーンに表示し、ペアリングリンクをスマートフォンに送信します。スマートフォンで操作します。",
+      "fields": {
+        "entity_id": {
+          "name": "メディアプレーヤー",
+          "description": "Castデバイス（Nest Hub、Chromecast）、Android TV、またはFire TV。"
+        },
+        "browser_id": {
+          "name": "ブラウザID",
+          "description": "browser_modのブラウザ（壁掛けタブレットなど）。メディアプレーヤーの代わりに使用します。"
+        },
+        "notify": {
+          "name": "通知",
+          "description": "ペアリングリンクの送信先となる通知サービス。デフォルト：すべてのモバイルアプリ。"
+        },
+        "dashboard_path": {
+          "name": "ダッシュボードパス",
+          "description": "表示用のダッシュボードを独自に作成した場合のみ設定します。デフォルト：weReciが提供するもの。"
+        },
+        "view_path": {
+          "name": "ビューパス",
+          "description": "独自のダッシュボードを使用する場合のみ：Webページカードを含むビュー。"
+        },
+        "return_path": {
+          "name": "戻り先パス",
+          "description": "表示が終了したときにbrowser_modブラウザが移動する先。"
+        },
+        "config_entry_id": {
+          "name": "アカウント",
+          "description": "複数のweReciアカウントが設定されている場合、どのアカウントか。"
+        },
+        "recipe": {
+          "name": "レシピ",
+          "description": "名前で開くレシピ。レシピのタイトルに似ている必要があります（「最も近い一致を許可」を参照）。"
+        },
+        "recipe_id": {
+          "name": "レシピID",
+          "description": "weReci IDで開くレシピ（レシピツールが返すもの）。名前の代わりに使用します。"
+        },
+        "without_phone": {
+          "name": "スマートフォンなし",
+          "description": "Home Assistantが調理を自動で実行します：スマートフォンも通知も不要です。レシピが必要です。画面からの分量変更と材料の差し替えが可能です（weReciのAI枠を使用します）；「分解」は、アプリでレシピがすでに分解されている場合に利用できます。"
+        },
+        "allow_closest": {
+          "name": "最も近い一致を許可",
+          "description": "weReciの検索は、何も一致しない場合でも最も近いレシピを見つけます。オフ（デフォルト）：名前がレシピのタイトルに似ている必要があり、そうでない場合はアクションが拒否されます。オン：最も近い一致をそのまま調理します。"
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "調理画面を停止",
+      "description": "調理画面を閉じ、画面を元に戻します。",
+      "fields": {
+        "config_entry_id": {
+          "name": "アカウント",
+          "description": "複数のweReciアカウントが設定されている場合、どのアカウントか。"
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "材料にチェックを付ける",
+      "description": "調理画面で1つの材料にチェックを付けたり外したりします。",
+      "fields": {
+        "index": {
+          "name": "インデックス",
+          "description": "センサーの材料リスト内の位置（0から開始）。"
+        },
+        "config_entry_id": {
+          "name": "アカウント",
+          "description": "複数のweReciアカウントが設定されている場合、どのアカウントか。"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "登录 weReci"
+      },
+      "reauth_confirm": {
+        "title": "重新登录 weReci",
+        "description": "weReci 需要你重新登录——可能是登录已过期，或者新功能需要当前连接尚未拥有的权限（烹饪画面上的缩放和替换）。"
+      }
+    },
+    "abort": {
+      "already_configured": "该 weReci 账号已连接。",
+      "cannot_connect": "无法连接 weReci。请稍后重试。",
+      "registration_refused": "weReci 无法注册此 Home Assistant。它必须可通过 https 访问，或已启用 My Home Assistant。",
+      "no_account": "weReci 已让你登录，但未指明是哪个账号。请重试。",
+      "wrong_account": "请使用设置此条目时所用的同一 weReci 账号登录。",
+      "reauth_successful": "已重新登录。",
+      "authorize_url_timeout": "打开 weReci 登录页面超时。",
+      "missing_configuration": "weReci 登录未设置。请尝试重新添加集成。",
+      "oauth_error": "weReci 返回了无效的登录响应。",
+      "oauth_failed": "weReci 登录失败。",
+      "oauth_timeout": "完成 weReci 登录超时。",
+      "oauth_unauthorized": "weReci 未授权此连接。",
+      "user_rejected_authorize": "你在 weReci 中拒绝了此连接。"
+    },
+    "create_entry": {
+      "default": "已连接。要通过语音或聊天使用食谱工具：设置 → 语音助手 → 你的助手 → 对话代理旁的齿轮图标 → 在\"控制 Home Assistant\"下勾选 weReci。购物清单实体显示你在 weReci 中共享的列表。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "weReci 仪表板页面",
+        "description": "各一个页面。两个都关闭后，仪表板会从侧边栏消失；你的实体、语音和烹饪画面始终正常工作。",
+        "data": {
+          "shopping_list": "购物清单页面",
+          "control_panel": "烹饪页面"
+        },
+        "data_description": {
+          "shopping_list": "你同步的 weReci 清单，作为仪表板上的一个页面。待办实体始终存在。",
+          "control_panel": "开始烹饪，逐步操作，查看屏幕。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "购物清单"
+      },
+      "ingredients": {
+        "name": "食材"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "下一步"
+      },
+      "previous_step": {
+        "name": "上一步"
+      },
+      "start_cooking": {
+        "name": "开始烹饪"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "烹饪中"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "烹饪中",
+        "state": {
+          "idle": "空闲",
+          "waiting": "等待手机",
+          "cooking": "烹饪中"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "食谱"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "屏幕"
+      },
+      "matches": {
+        "name": "匹配"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "无需手机"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "显示烹饪画面",
+      "description": "将 weReci 烹饪模式的画面投放到屏幕上，并将配对链接发送到你的手机。由手机操控。",
+      "fields": {
+        "entity_id": {
+          "name": "媒体播放器",
+          "description": "Cast 设备（Nest Hub、Chromecast）、Android TV 或 Fire TV。"
+        },
+        "browser_id": {
+          "name": "浏览器 ID",
+          "description": "一个 browser_mod 浏览器，例如墙上的平板。可代替媒体播放器使用。"
+        },
+        "notify": {
+          "name": "通知",
+          "description": "用于发送配对链接的通知服务。默认：所有移动应用。"
+        },
+        "dashboard_path": {
+          "name": "仪表板路径",
+          "description": "仅当你为显示画面自建了仪表板时使用。默认：weReci 提供的仪表板。"
+        },
+        "view_path": {
+          "name": "视图路径",
+          "description": "仅限自建仪表板：包含网页卡片的视图。"
+        },
+        "return_path": {
+          "name": "返回路径",
+          "description": "显示画面停止后 browser_mod 浏览器跳转的地址。"
+        },
+        "config_entry_id": {
+          "name": "账号",
+          "description": "使用哪个 weReci 账号（如果设置了多个）。"
+        },
+        "recipe": {
+          "name": "食谱",
+          "description": "按名称打开的食谱。名称需与食谱标题相似（参见\"允许最接近匹配\"）。"
+        },
+        "recipe_id": {
+          "name": "食谱 ID",
+          "description": "按 weReci ID 打开的食谱（即食谱工具返回的 ID）。可代替名称使用。"
+        },
+        "without_phone": {
+          "name": "无需手机",
+          "description": "Home Assistant 自行运行烹饪：无需手机，无通知。需要一份食谱。缩放和替换可在屏幕上操作（使用你的 weReci AI 额度）；当食谱已在应用中拆解过时，会提供\"拆解\"功能。"
+        },
+        "allow_closest": {
+          "name": "允许最接近匹配",
+          "description": "weReci 的搜索总能找到最接近的食谱，即使没有完全匹配的。关闭（默认）：名称必须与食谱标题相似，否则操作将被拒绝。开启：无论如何都烹饪最接近的匹配。"
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "停止烹饪画面",
+      "description": "关闭烹饪画面并释放屏幕。",
+      "fields": {
+        "config_entry_id": {
+          "name": "账号",
+          "description": "使用哪个 weReci 账号（如果设置了多个）。"
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "勾选食材",
+      "description": "在烹饪画面上勾选或取消勾选一个食材。",
+      "fields": {
+        "index": {
+          "name": "索引",
+          "description": "在传感器食材列表中的位置，从 0 开始。"
+        },
+        "config_entry_id": {
+          "name": "账号",
+          "description": "使用哪个 weReci 账号（如果设置了多个）。"
+        }
+      }
+    }
+  }
+}

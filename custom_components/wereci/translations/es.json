@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Inicia sesión en weReci"
+      },
+      "reauth_confirm": {
+        "title": "Vuelve a iniciar sesión en weReci",
+        "description": "weReci necesita que vuelvas a iniciar sesión — o bien la sesión expiró, o una nueva función necesita un permiso que esta conexión aún no tiene (ajustar cantidades y sustituciones en la pantalla de cocción)."
+      }
+    },
+    "abort": {
+      "already_configured": "Esta cuenta de weReci ya está conectada.",
+      "cannot_connect": "No se pudo conectar con weReci. Inténtalo de nuevo en un momento.",
+      "registration_refused": "weReci no pudo registrar este Home Assistant. Debe ser accesible por https o tener My Home Assistant activado.",
+      "no_account": "weReci ha iniciado tu sesión, pero no indicó de qué cuenta se trata. Inténtalo de nuevo.",
+      "wrong_account": "Inicia sesión con la misma cuenta de weReci con la que se configuró esta entrada.",
+      "reauth_successful": "Sesión iniciada de nuevo.",
+      "authorize_url_timeout": "Se agotó el tiempo al abrir la página de inicio de sesión de weReci.",
+      "missing_configuration": "El inicio de sesión de weReci no está configurado. Prueba a añadir la integración de nuevo.",
+      "oauth_error": "weReci devolvió una respuesta de inicio de sesión no válida.",
+      "oauth_failed": "Falló el inicio de sesión de weReci.",
+      "oauth_timeout": "Se agotó el tiempo al finalizar el inicio de sesión de weReci.",
+      "oauth_unauthorized": "weReci no autorizó esta conexión.",
+      "user_rejected_authorize": "Rechazaste la conexión en weReci."
+    },
+    "create_entry": {
+      "default": "Conectado. Para usar las herramientas de receta por voz o chat: Ajustes → Asistentes de voz → tu asistente → el engranaje junto a Agente de conversación → en Controlar Home Assistant, marca weReci. La entidad de la lista de la compra muestra la lista que compartes en weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Páginas del panel de weReci",
+        "description": "Una página cada una. Desactiva ambas y el panel desaparece de la barra lateral; tus entidades, la voz y las pantallas de cocción seguirán funcionando de cualquier manera.",
+        "data": {
+          "shopping_list": "Página de la lista de la compra",
+          "control_panel": "Página de cocción"
+        },
+        "data_description": {
+          "shopping_list": "Tu lista sincronizada de weReci, como una página en el panel. La entidad de tareas está ahí de todas formas.",
+          "control_panel": "Empieza una cocción, avanza por los pasos y mira la pantalla."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Lista de la compra"
+      },
+      "ingredients": {
+        "name": "Ingredientes"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Siguiente paso"
+      },
+      "previous_step": {
+        "name": "Paso anterior"
+      },
+      "start_cooking": {
+        "name": "Empezar a cocinar"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Cocinando"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Cocinando",
+        "state": {
+          "idle": "Inactivo",
+          "waiting": "Esperando el teléfono",
+          "cooking": "Cocinando"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Receta"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Pantalla"
+      },
+      "matches": {
+        "name": "Coincidencias"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Sin teléfono"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Mostrar pantalla de cocción",
+      "description": "Pon la pantalla del Modo de Cocción de weReci en una pantalla y envía el enlace de emparejamiento a tu teléfono. El teléfono la controla.",
+      "fields": {
+        "entity_id": {
+          "name": "Reproductor multimedia",
+          "description": "Un dispositivo Cast (Nest Hub, Chromecast), Android TV o Fire TV."
+        },
+        "browser_id": {
+          "name": "ID del navegador",
+          "description": "Un navegador de browser_mod, p. ej. una tablet de pared. Úsalo en lugar de un reproductor multimedia."
+        },
+        "notify": {
+          "name": "Notificar",
+          "description": "Servicios de notificación a los que enviar el enlace de emparejamiento. Predeterminado: todas las apps móviles."
+        },
+        "dashboard_path": {
+          "name": "Ruta del panel",
+          "description": "Solo si creaste tu propio panel para la pantalla. Predeterminado: el que proporciona weReci."
+        },
+        "view_path": {
+          "name": "Ruta de la vista",
+          "description": "Solo con tu propio panel: la vista que contiene la tarjeta de página web."
+        },
+        "return_path": {
+          "name": "Ruta de retorno",
+          "description": "A dónde va un navegador de browser_mod cuando se detiene la pantalla."
+        },
+        "config_entry_id": {
+          "name": "Cuenta",
+          "description": "Qué cuenta de weReci, si hay más de una configurada."
+        },
+        "recipe": {
+          "name": "Receta",
+          "description": "Una receta para abrir, por nombre. Debe parecerse al título de la receta (ver Permitir coincidencia más cercana)."
+        },
+        "recipe_id": {
+          "name": "ID de receta",
+          "description": "Una receta para abrir, por su ID de weReci (como lo devuelven las herramientas de receta). Úsalo en lugar de un nombre."
+        },
+        "without_phone": {
+          "name": "Sin teléfono",
+          "description": "Home Assistant ejecuta la cocción por sí mismo: sin teléfono, sin notificación. Necesita una receta. Ajustar cantidades y sustituciones funcionan desde la pantalla (usan tu asignación de IA de weReci); Desglosar se ofrece cuando la receta ya estaba desglosada en la app."
+        },
+        "allow_closest": {
+          "name": "Permitir coincidencia más cercana",
+          "description": "La búsqueda de weReci siempre encuentra la receta más cercana, incluso cuando nada encaja. Desactivado (predeterminado): un nombre debe parecerse al título de la receta o la acción se rechaza. Activado: cocina la coincidencia más cercana de todos modos."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Detener pantalla de cocción",
+      "description": "Cierra la pantalla de cocción y libera la pantalla.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cuenta",
+          "description": "Qué cuenta de weReci, si hay más de una configurada."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Marcar ingrediente",
+      "description": "Marca o desmarca un ingrediente en la pantalla de cocción.",
+      "fields": {
+        "index": {
+          "name": "Índice",
+          "description": "Posición en la lista de ingredientes del sensor, empezando en 0."
+        },
+        "config_entry_id": {
+          "name": "Cuenta",
+          "description": "Qué cuenta de weReci, si hay más de una configurada."
+        }
+      }
+    }
+  }
+}

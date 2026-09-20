@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "weReci'ye giriş yap"
+      },
+      "reauth_confirm": {
+        "title": "weReci'ye tekrar giriş yap",
+        "description": "weReci'nin tekrar giriş yapman gerekiyor — ya oturumun süresi doldu, ya da yeni bir özellik bu bağlantının henüz sahip olmadığı bir izne ihtiyaç duyuyor (pişirme ekranında ölçeklendirme ve değişiklikler)."
+      }
+    },
+    "abort": {
+      "already_configured": "Bu weReci hesabı zaten bağlı.",
+      "cannot_connect": "weReci'ye ulaşılamadı. Birazdan tekrar dene.",
+      "registration_refused": "weReci bu Home Assistant'ı kaydedemedi. https üzerinden ulaşılabilir olmalı ya da My Home Assistant etkinleştirilmeli.",
+      "no_account": "weReci sana giriş yaptırdı ama hangi hesap olduğunu söylemedi. Tekrar dene.",
+      "wrong_account": "Bu kayıt kurulurken kullanılan weReci hesabıyla giriş yap.",
+      "reauth_successful": "Tekrar giriş yapıldı.",
+      "authorize_url_timeout": "weReci giriş sayfası açılırken zaman aşımı oldu.",
+      "missing_configuration": "weReci girişi ayarlanmamış. Entegrasyonu tekrar eklemeyi dene.",
+      "oauth_error": "weReci geçersiz bir giriş yanıtı döndürdü.",
+      "oauth_failed": "weReci girişi başarısız oldu.",
+      "oauth_timeout": "weReci girişi tamamlanırken zaman aşımı oldu.",
+      "oauth_unauthorized": "weReci bu bağlantıyı yetkilendirmedi.",
+      "user_rejected_authorize": "weReci'de bağlantıyı reddettin."
+    },
+    "create_entry": {
+      "default": "Bağlandı. Tarif araçlarını sesli veya sohbetle kullanmak için: Ayarlar → Sesli asistanlar → asistanın → Konuşma aracısının yanındaki dişli → Home Assistant'ı Kontrol Et altında weReci'yi işaretle. Alışveriş listesi varlığı, weReci'de paylaştığın listeyi gösterir."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "weReci panel sayfaları",
+        "description": "Her biri birer sayfa. İkisini de kapatırsan panel kenar çubuğundan çıkar; varlıkların, sesli kontrolün ve pişirme ekranların her durumda çalışmaya devam eder.",
+        "data": {
+          "shopping_list": "Alışveriş listesi sayfası",
+          "control_panel": "Pişirme sayfası"
+        },
+        "data_description": {
+          "shopping_list": "Senkronize weReci listen, panelde bir sayfa olarak. Yapılacaklar varlığı her durumda orada.",
+          "control_panel": "Pişirmeyi başlat, adım adım ilerle ve ekranı izle."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Alışveriş listesi"
+      },
+      "ingredients": {
+        "name": "Malzemeler"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Sonraki adım"
+      },
+      "previous_step": {
+        "name": "Önceki adım"
+      },
+      "start_cooking": {
+        "name": "Pişirmeye başla"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Pişiriliyor"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Pişiriliyor",
+        "state": {
+          "idle": "Boşta",
+          "waiting": "Telefon bekleniyor",
+          "cooking": "Pişiriliyor"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Tarif"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Ekran"
+      },
+      "matches": {
+        "name": "Eşleşmeler"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Telefonsuz"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Pişirme ekranını göster",
+      "description": "weReci Pişirme Modu'nun ekranını bir ekrana yerleştir ve eşleştirme bağlantısını telefonuna gönder. Telefon onu yönetir.",
+      "fields": {
+        "entity_id": {
+          "name": "Medya oynatıcı",
+          "description": "Bir Cast cihazı (Nest Hub, Chromecast), Android TV veya Fire TV."
+        },
+        "browser_id": {
+          "name": "Tarayıcı kimliği",
+          "description": "Bir browser_mod tarayıcısı, örn. duvardaki bir tablet. Medya oynatıcı yerine kullan."
+        },
+        "notify": {
+          "name": "Bildirim",
+          "description": "Eşleştirme bağlantısının gönderileceği bildirim hizmetleri. Varsayılan: tüm mobil uygulamalar."
+        },
+        "dashboard_path": {
+          "name": "Panel yolu",
+          "description": "Sadece ekran için kendi panelini kurduysan. Varsayılan: weReci'nin sağladığı."
+        },
+        "view_path": {
+          "name": "Görünüm yolu",
+          "description": "Sadece kendi panelinle: web sayfası kartını içeren görünüm."
+        },
+        "return_path": {
+          "name": "Dönüş yolu",
+          "description": "Ekran durduğunda bir browser_mod tarayıcısının gideceği yer."
+        },
+        "config_entry_id": {
+          "name": "Hesap",
+          "description": "Hangi weReci hesabı, birden fazla ayarlanmışsa."
+        },
+        "recipe": {
+          "name": "Tarif",
+          "description": "Ada göre açılacak bir tarif. Tarifin başlığına benzemeli (bkz. En yakın eşleşmeye izin ver)."
+        },
+        "recipe_id": {
+          "name": "Tarif kimliği",
+          "description": "weReci kimliğiyle açılacak bir tarif (tarif araçlarının döndürdüğü şekliyle). Ad yerine kullan."
+        },
+        "without_phone": {
+          "name": "Telefonsuz",
+          "description": "Home Assistant pişirmeyi kendisi yürütür: telefon yok, bildirim yok. Tarif gerekir. Ölçeklendirme ve değişiklikler ekrandan çalışır (weReci AI kotanı kullanır); Parçalara ayır seçeneği, tarif uygulamada zaten parçalara ayrılmışsa sunulur."
+        },
+        "allow_closest": {
+          "name": "En yakın eşleşmeye izin ver",
+          "description": "weReci araması hiçbir şey uymasa bile her zaman en yakın tarifi bulur. Kapalı (varsayılan): bir ad tarifin başlığına benzemeli, yoksa işlem reddedilir. Açık: en yakın eşleşmeyi yine de pişir."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Pişirme ekranını durdur",
+      "description": "Pişirme ekranını kapat ve ekranı geri ver.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Hesap",
+          "description": "Hangi weReci hesabı, birden fazla ayarlanmışsa."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Malzemeyi işaretle",
+      "description": "Pişirme ekranında bir malzemeyi işaretle veya işaretini kaldır.",
+      "fields": {
+        "index": {
+          "name": "Dizin",
+          "description": "Sensörün malzemeler listesindeki konum, 0'dan başlar."
+        },
+        "config_entry_id": {
+          "name": "Hesap",
+          "description": "Hangi weReci hesabı, birden fazla ayarlanmışsa."
+        }
+      }
+    }
+  }
+}

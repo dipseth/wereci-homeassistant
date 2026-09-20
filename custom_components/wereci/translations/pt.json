@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Entrar no weReci"
+      },
+      "reauth_confirm": {
+        "title": "Entrar no weReci novamente",
+        "description": "O weReci precisa que você entre novamente — o login expirou, ou um novo recurso precisa de uma permissão que esta conexão ainda não tem (ajustes de porções e substituições na exibição de cozimento)."
+      }
+    },
+    "abort": {
+      "already_configured": "Esta conta do weReci já está conectada.",
+      "cannot_connect": "Não foi possível acessar o weReci. Tente novamente em instantes.",
+      "registration_refused": "O weReci não conseguiu registrar este Home Assistant. Ele deve ser acessível via https, ou ter o My Home Assistant ativado.",
+      "no_account": "O weReci conectou você, mas não informou qual conta. Tente novamente.",
+      "wrong_account": "Entre com a mesma conta do weReci usada para configurar esta entrada.",
+      "reauth_successful": "Conectado novamente.",
+      "authorize_url_timeout": "Tempo esgotado ao abrir a página de login do weReci.",
+      "missing_configuration": "O login do weReci não está configurado. Tente adicionar a integração novamente.",
+      "oauth_error": "O weReci retornou uma resposta de login inválida.",
+      "oauth_failed": "Falha no login do weReci.",
+      "oauth_timeout": "Tempo esgotado ao finalizar o login do weReci.",
+      "oauth_unauthorized": "O weReci não autorizou esta conexão.",
+      "user_rejected_authorize": "Você recusou a conexão no weReci."
+    },
+    "create_entry": {
+      "default": "Conectado. Para usar as ferramentas de receita por voz ou chat: Configurações → Assistentes de voz → seu assistente → a engrenagem ao lado de Agente de conversa → em Controlar o Home Assistant, marque weReci. A entidade da lista de compras mostra a lista que você compartilha no weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Páginas do painel do weReci",
+        "description": "Uma página cada. Desligue as duas e o painel sai da barra lateral; suas entidades, voz e exibições de cozimento continuam funcionando de qualquer forma.",
+        "data": {
+          "shopping_list": "Página da lista de compras",
+          "control_panel": "Página de cozimento"
+        },
+        "data_description": {
+          "shopping_list": "Sua lista sincronizada do weReci, como uma página no painel. A entidade de tarefas está lá de qualquer forma.",
+          "control_panel": "Inicie um cozimento, avance pelos passos e acompanhe a tela."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Lista de compras"
+      },
+      "ingredients": {
+        "name": "Ingredientes"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Próximo passo"
+      },
+      "previous_step": {
+        "name": "Passo anterior"
+      },
+      "start_cooking": {
+        "name": "Começar a cozinhar"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Cozinhando"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Cozinhando",
+        "state": {
+          "idle": "Em espera",
+          "waiting": "Aguardando o telefone",
+          "cooking": "Cozinhando"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Receita"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Tela"
+      },
+      "matches": {
+        "name": "Correspondências"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Sem telefone"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Mostrar exibição de cozimento",
+      "description": "Coloque a exibição do Modo de Cozimento do weReci numa tela e envie o link de pareamento para seu telefone. O telefone controla tudo.",
+      "fields": {
+        "entity_id": {
+          "name": "Player de mídia",
+          "description": "Um dispositivo Cast (Nest Hub, Chromecast), Android TV ou Fire TV."
+        },
+        "browser_id": {
+          "name": "ID do navegador",
+          "description": "Um navegador browser_mod, por exemplo, um tablet na parede. Use no lugar de um player de mídia."
+        },
+        "notify": {
+          "name": "Notificar",
+          "description": "Serviços de notificação para enviar o link de pareamento. Padrão: todos os apps móveis."
+        },
+        "dashboard_path": {
+          "name": "Caminho do painel",
+          "description": "Apenas se você criou seu próprio painel para a exibição. Padrão: o fornecido pelo weReci."
+        },
+        "view_path": {
+          "name": "Caminho da visualização",
+          "description": "Apenas com seu próprio painel: a visualização que contém o cartão de página web."
+        },
+        "return_path": {
+          "name": "Caminho de retorno",
+          "description": "Para onde um navegador browser_mod vai quando a exibição é encerrada."
+        },
+        "config_entry_id": {
+          "name": "Conta",
+          "description": "Qual conta do weReci, se mais de uma estiver configurada."
+        },
+        "recipe": {
+          "name": "Receita",
+          "description": "Uma receita para abrir, pelo nome. Deve se parecer com o título da receita (veja Permitir correspondência mais próxima)."
+        },
+        "recipe_id": {
+          "name": "ID da receita",
+          "description": "Uma receita para abrir, pelo seu ID do weReci (como retornado pelas ferramentas de receita). Use no lugar de um nome."
+        },
+        "without_phone": {
+          "name": "Sem telefone",
+          "description": "O Home Assistant executa o cozimento sozinho: sem telefone, sem notificação. Precisa de uma receita. Ajustes de porções e substituições funcionam na tela (usam sua cota de IA do weReci); Dividir em etapas é oferecido quando a receita já foi dividida em etapas no app."
+        },
+        "allow_closest": {
+          "name": "Permitir correspondência mais próxima",
+          "description": "A busca do weReci sempre encontra a receita mais próxima, mesmo quando nada se encaixa. Desligado (padrão): o nome deve se parecer com o título da receita ou a ação não prossegue. Ligado: cozinhe a correspondência mais próxima de qualquer forma."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Parar exibição de cozimento",
+      "description": "Feche a exibição de cozimento e devolva a tela.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Conta",
+          "description": "Qual conta do weReci, se mais de uma estiver configurada."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Marcar ingrediente",
+      "description": "Marcar ou desmarcar um ingrediente na exibição de cozimento.",
+      "fields": {
+        "index": {
+          "name": "Índice",
+          "description": "Posição na lista de ingredientes do sensor, começando em 0."
+        },
+        "config_entry_id": {
+          "name": "Conta",
+          "description": "Qual conta do weReci, se mais de uma estiver configurada."
+        }
+      }
+    }
+  }
+}

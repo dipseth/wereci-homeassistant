@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Đăng nhập vào weReci"
+      },
+      "reauth_confirm": {
+        "title": "Đăng nhập lại vào weReci",
+        "description": "weReci cần bạn đăng nhập lại — hoặc do phiên đăng nhập đã hết hạn, hoặc một tính năng mới cần quyền mà kết nối này chưa có (đổi khẩu phần và thay thế nguyên liệu trên màn hình nấu ăn)."
+      }
+    },
+    "abort": {
+      "already_configured": "Tài khoản weReci này đã được kết nối.",
+      "cannot_connect": "Không thể kết nối đến weReci. Hãy thử lại sau ít phút.",
+      "registration_refused": "weReci không thể đăng ký Home Assistant này. Home Assistant phải có thể truy cập qua https, hoặc được bật My Home Assistant.",
+      "no_account": "weReci đã đăng nhập cho bạn nhưng không cho biết đây là tài khoản nào. Hãy thử lại.",
+      "wrong_account": "Hãy đăng nhập bằng cùng tài khoản weReci mà mục này đã thiết lập.",
+      "reauth_successful": "Đã đăng nhập lại.",
+      "authorize_url_timeout": "Hết thời gian chờ khi mở trang đăng nhập weReci.",
+      "missing_configuration": "Đăng nhập weReci chưa được thiết lập. Hãy thử thêm tích hợp lại.",
+      "oauth_error": "weReci trả về phản hồi đăng nhập không hợp lệ.",
+      "oauth_failed": "Đăng nhập weReci thất bại.",
+      "oauth_timeout": "Hết thời gian chờ khi hoàn tất đăng nhập weReci.",
+      "oauth_unauthorized": "weReci không cho phép kết nối này.",
+      "user_rejected_authorize": "Bạn đã từ chối kết nối trong weReci."
+    },
+    "create_entry": {
+      "default": "Đã kết nối. Để dùng công cụ công thức bằng giọng nói hoặc chat: Cài đặt → Trợ lý giọng nói → trợ lý của bạn → biểu tượng bánh răng bên cạnh Agent hội thoại → trong mục Điều khiển Home Assistant, đánh dấu vào weReci. Thực thể danh sách mua sắm sẽ hiển thị danh sách bạn chia sẻ trên weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Các trang bảng điều khiển weReci",
+        "description": "Mỗi cái một trang. Tắt cả hai thì bảng điều khiển sẽ rời khỏi thanh bên; các thực thể, trợ lý giọng nói và màn hình nấu ăn của bạn vẫn hoạt động ở cả hai trường hợp.",
+        "data": {
+          "shopping_list": "Trang danh sách mua sắm",
+          "control_panel": "Trang nấu ăn"
+        },
+        "data_description": {
+          "shopping_list": "Danh sách weReci đã đồng bộ của bạn, hiển thị như một trang trên bảng điều khiển. Thực thể to-do vẫn luôn ở đó.",
+          "control_panel": "Bắt đầu nấu ăn, lần lượt thực hiện từng bước và theo dõi trên màn hình."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Danh sách mua sắm"
+      },
+      "ingredients": {
+        "name": "Nguyên liệu"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Bước tiếp theo"
+      },
+      "previous_step": {
+        "name": "Bước trước đó"
+      },
+      "start_cooking": {
+        "name": "Bắt đầu nấu ăn"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Đang nấu ăn"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Đang nấu ăn",
+        "state": {
+          "idle": "Chờ",
+          "waiting": "Đang chờ điện thoại",
+          "cooking": "Đang nấu ăn"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Công thức"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Màn hình"
+      },
+      "matches": {
+        "name": "Các kết quả khớp"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Không có điện thoại"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Hiển thị màn hình nấu ăn",
+      "description": "Đặt màn hình của Chế độ Nấu weReci lên một màn hình và gửi liên kết ghép đôi đến điện thoại của bạn. Điện thoại sẽ điều khiển nó.",
+      "fields": {
+        "entity_id": {
+          "name": "Trình phát phương tiện",
+          "description": "Thiết bị Cast (Nest Hub, Chromecast), Android TV hoặc Fire TV."
+        },
+        "browser_id": {
+          "name": "ID trình duyệt",
+          "description": "Trình duyệt browser_mod, ví dụ máy tính bảng gắn tường. Dùng thay cho trình phát phương tiện."
+        },
+        "notify": {
+          "name": "Thông báo",
+          "description": "Dịch vụ thông báo để gửi liên kết ghép đôi. Mặc định: mọi ứng dụng di động."
+        },
+        "dashboard_path": {
+          "name": "Đường dẫn bảng điều khiển",
+          "description": "Chỉ áp dụng nếu bạn tự xây dựng bảng điều khiển cho màn hình. Mặc định: bảng điều khiển do weReci cung cấp."
+        },
+        "view_path": {
+          "name": "Đường dẫn chế độ xem",
+          "description": "Chỉ dùng với bảng điều khiển riêng của bạn: chế độ xem chứa thẻ trang web."
+        },
+        "return_path": {
+          "name": "Đường dẫn trả về",
+          "description": "Nơi trình duyệt browser_mod sẽ đến khi màn hình dừng."
+        },
+        "config_entry_id": {
+          "name": "Tài khoản",
+          "description": "Tài khoản weReci nào, nếu có nhiều hơn một tài khoản được thiết lập."
+        },
+        "recipe": {
+          "name": "Công thức",
+          "description": "Một công thức để mở, theo tên. Tên này phải giống với tiêu đề của công thức (xem Cho phép khớp gần nhất)."
+        },
+        "recipe_id": {
+          "name": "ID công thức",
+          "description": "Một công thức để mở, theo ID weReci của nó (như công cụ công thức trả về). Dùng thay cho tên."
+        },
+        "without_phone": {
+          "name": "Không có điện thoại",
+          "description": "Home Assistant tự chạy quá trình nấu ăn: không cần điện thoại, không cần thông báo. Cần một công thức. Việc đổi khẩu phần và thay thế nguyên liệu hoạt động trên màn hình (chúng dùng hạn mức AI weReci của bạn); tính năng Chia nhỏ được cung cấp khi công thức đã được chia nhỏ trong ứng dụng."
+        },
+        "allow_closest": {
+          "name": "Cho phép khớp gần nhất",
+          "description": "Tìm kiếm của weReci luôn tìm thấy công thức gần nhất, ngay cả khi không có gì khớp. Tắt (mặc định): tên phải giống tiêu đề của công thức, nếu không hành động sẽ bị từ chối. Bật: cứ nấu công thức khớp gần nhất."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Dừng màn hình nấu ăn",
+      "description": "Đóng màn hình nấu ăn và trả lại màn hình.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Tài khoản",
+          "description": "Tài khoản weReci nào, nếu có nhiều hơn một tài khoản được thiết lập."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Đánh dấu nguyên liệu",
+      "description": "Đánh dấu hoặc bỏ đánh dấu một nguyên liệu trên màn hình nấu ăn.",
+      "fields": {
+        "index": {
+          "name": "Chỉ mục",
+          "description": "Vị trí trong danh sách nguyên liệu của cảm biến, bắt đầu từ 0."
+        },
+        "config_entry_id": {
+          "name": "Tài khoản",
+          "description": "Tài khoản weReci nào, nếu có nhiều hơn một tài khoản được thiết lập."
+        }
+      }
+    }
+  }
+}

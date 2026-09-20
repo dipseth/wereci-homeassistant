@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "התחברות ל-weReci"
+      },
+      "reauth_confirm": {
+        "title": "התחברות מחדש ל-weReci",
+        "description": "weReci צריך שתתחבר שוב — ההתחברות פגה, או שתכונה חדשה דורשת הרשאה שאין לחיבור הזה עדיין (שינוי כמויות והחלפות בתצוגת הבישול)."
+      }
+    },
+    "abort": {
+      "already_configured": "חשבון weReci הזה כבר מחובר.",
+      "cannot_connect": "לא ניתן היה להגיע ל-weReci. נסה שוב עוד רגע.",
+      "registration_refused": "weReci לא הצליח לרשום את Home Assistant הזה. הוא חייב להיות נגיש דרך https, או שיהיה מופעל My Home Assistant.",
+      "no_account": "weReci חיבר אותך אך לא ציין איזה חשבון. נסה שוב.",
+      "wrong_account": "התחבר עם אותו חשבון weReci שאיתו הוגדרה הרשומה הזו.",
+      "reauth_successful": "החיבור חודש בהצלחה.",
+      "authorize_url_timeout": "תם הזמן בעת פתיחת דף ההתחברות של weReci.",
+      "missing_configuration": "התחברות ל-weReci לא מוגדרת. נסה להוסיף את האינטגרציה מחדש.",
+      "oauth_error": "weReci החזיר תגובת התחברות לא תקינה.",
+      "oauth_failed": "ההתחברות ל-weReci נכשלה.",
+      "oauth_timeout": "תם הזמן בעת סיום ההתחברות ל-weReci.",
+      "oauth_unauthorized": "weReci לא אישר את החיבור הזה.",
+      "user_rejected_authorize": "דחית את החיבור ב-weReci."
+    },
+    "create_entry": {
+      "default": "מחובר. כדי להשתמש בכלי המתכונים בקול או בצ'אט: הגדרות → עוזרים קוליים → העוזר שלך → גלגל השיניים ליד סוכן השיחה → תחת שליטה ב-Home Assistant, סמן את weReci. ישות רשימת הקניות מציגה את הרשימה המשותפת שלך ב-weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "דפי לוח המחוונים של weReci",
+        "description": "דף לכל אחד. כיבוי שניהם מסיר את לוח המחוונים מסרגל הצד; הישויות, הקול ותצוגות הבישול ממשיכים לעבוד בכל מקרה.",
+        "data": {
+          "shopping_list": "דף רשימת קניות",
+          "control_panel": "דף בישול"
+        },
+        "data_description": {
+          "shopping_list": "רשימת weReci המסונכרנת שלך, כדף בלוח המחוונים. ישות המשימות קיימת בכל מקרה.",
+          "control_panel": "התחל בישול, עבור שלב אחר שלב, וצפה במסך."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "רשימת קניות"
+      },
+      "ingredients": {
+        "name": "מצרכים"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "שלב הבא"
+      },
+      "previous_step": {
+        "name": "שלב קודם"
+      },
+      "start_cooking": {
+        "name": "התחל לבשל"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "בישול"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "בישול",
+        "state": {
+          "idle": "במנוחה",
+          "waiting": "ממתין לטלפון",
+          "cooking": "בישול"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "מתכון"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "מסך"
+      },
+      "matches": {
+        "name": "התאמות"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "ללא טלפון"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "הצג תצוגת בישול",
+      "description": "הצג את מצב הבישול של weReci על מסך ושלח את קישור ההתאמה לטלפון. הטלפון מפעיל אותו.",
+      "fields": {
+        "entity_id": {
+          "name": "נגן מדיה",
+          "description": "מכשיר Cast (Nest Hub, Chromecast), Android TV או Fire TV."
+        },
+        "browser_id": {
+          "name": "מזהה דפדפן",
+          "description": "דפדפן browser_mod, למשל טאבלט קיר. שימוש במקום נגן מדיה."
+        },
+        "notify": {
+          "name": "שליחת התראה",
+          "description": "שירותי התראות לשליחת קישור ההתאמה. ברירת מחדל: כל אפליקציות הנייד."
+        },
+        "dashboard_path": {
+          "name": "נתיב לוח מחוונים",
+          "description": "רק אם בנית לוח מחוונים משלך לתצוגה. ברירת מחדל: זה שמספק weReci."
+        },
+        "view_path": {
+          "name": "נתיב תצוגה",
+          "description": "רק עם לוח מחוונים משלך: התצוגה שמכילה את כרטיס דף האינטרנט."
+        },
+        "return_path": {
+          "name": "נתיב חזרה",
+          "description": "לאן עובר דפדפן browser_mod כשהתצוגה נעצרת."
+        },
+        "config_entry_id": {
+          "name": "חשבון",
+          "description": "איזה חשבון weReci, אם יש יותר מאחד מוגדר."
+        },
+        "recipe": {
+          "name": "מתכון",
+          "description": "מתכון לפתיחה, לפי שם. השם חייב להיות דומה לכותרת המתכון (ראה אפשר התאמה הקרובה ביותר)."
+        },
+        "recipe_id": {
+          "name": "מזהה מתכון",
+          "description": "מתכון לפתיחה, לפי מזהה weReci שלו (כפי שכלי המתכונים מחזירים). שימוש במקום שם."
+        },
+        "without_phone": {
+          "name": "ללא טלפון",
+          "description": "Home Assistant מנהל את הבישול בעצמו: ללא טלפון, ללא התראה. דורש מתכון. שינוי כמויות והחלפות עובדים מהמסך (הם משתמשים במכסת ה-AI של weReci); פירוק לשלבים מוצע כשהמתכון כבר פורק באפליקציה."
+        },
+        "allow_closest": {
+          "name": "אפשר התאמה הקרובה ביותר",
+          "description": "החיפוש של weReci תמיד מוצא את המתכון הקרוב ביותר, גם כשאין התאמה מושלמת. כבוי (ברירת מחדל): השם חייב להיות דומה לכותרת המתכון, אחרת הפעולה נדחית. מופעל: בישול ההתאמה הקרובה ביותר בכל מקרה."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "עצור תצוגת בישול",
+      "description": "סגור את תצוגת הבישול והחזר את המסך.",
+      "fields": {
+        "config_entry_id": {
+          "name": "חשבון",
+          "description": "איזה חשבון weReci, אם יש יותר מאחד מוגדר."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "סמן מצרך",
+      "description": "סמן או בטל סימון של מצרך אחד בתצוגת הבישול.",
+      "fields": {
+        "index": {
+          "name": "אינדקס",
+          "description": "מיקום ברשימת המצרכים של החיישן, החל מ-0."
+        },
+        "config_entry_id": {
+          "name": "חשבון",
+          "description": "איזה חשבון weReci, אם יש יותר מאחד מוגדר."
+        }
+      }
+    }
+  }
+}

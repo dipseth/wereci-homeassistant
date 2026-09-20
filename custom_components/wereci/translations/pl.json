@@ -1,0 +1,177 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Zaloguj się w weReci"
+      },
+      "reauth_confirm": {
+        "title": "Zaloguj się ponownie w weReci",
+        "description": "weReci wymaga ponownego logowania — albo logowanie wygasło, albo nowa funkcja potrzebuje uprawnienia, którego to połączenie jeszcze nie ma (skalowanie i zamiany na ekranie gotowania)."
+      }
+    },
+    "abort": {
+      "already_configured": "To konto weReci jest już połączone.",
+      "cannot_connect": "Nie udało się połączyć z weReci. Spróbuj ponownie za chwilę.",
+      "registration_refused": "weReci nie mogło zarejestrować tego Home Assistant. Musi być dostępny przez https lub mieć włączone My Home Assistant.",
+      "no_account": "weReci zalogowało Cię, ale nie podało, którego konta. Spróbuj ponownie.",
+      "wrong_account": "Zaloguj się tym samym kontem weReci, z którym utworzono ten wpis.",
+      "reauth_successful": "Zalogowano ponownie.",
+      "authorize_url_timeout": "Przekroczono czas podczas otwierania strony logowania weReci.",
+      "missing_configuration": "Logowanie weReci nie jest skonfigurowane. Spróbuj dodać integrację ponownie.",
+      "oauth_error": "weReci zwróciło nieprawidłową odpowiedź logowania.",
+      "oauth_failed": "Logowanie weReci nie powiodło się.",
+      "oauth_timeout": "Upłynął czas oczekiwania na ukończenie logowania weReci.",
+      "oauth_unauthorized": "weReci nie autoryzowało tego połączenia.",
+      "user_rejected_authorize": "Odrzucono połączenie w weReci."
+    },
+    "create_entry": {
+      "default": "Połączono. Aby używać narzędzi przepisów głosem lub czatem: Ustawienia → Asystenci głosowi → Twój asystent → koło zębate obok Agenta konwersacji → w sekcji Kontrola Home Assistant zaznacz weReci. Encja listy zakupów pokazuje listę udostępnianą w weReci."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Strony panelu weReci",
+        "description": "Każda jako osobna strona. Wyłącz obie, a panel zniknie z paska bocznego; encje, sterowanie głosem i ekrany gotowania działają w obu wypadkach.",
+        "data": {
+          "shopping_list": "Strona listy zakupów",
+          "control_panel": "Strona gotowania"
+        },
+        "data_description": {
+          "shopping_list": "Twoja zsynchronizowana lista weReci jako strona w panelu. Encja to-do jest tam w obu wypadkach.",
+          "control_panel": "Rozpocznij gotowanie, przechodź krok po kroku i śledź ekran."
+        }
+      }
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Lista zakupów"
+      },
+      "ingredients": {
+        "name": "Składniki"
+      }
+    },
+    "button": {
+      "next_step": {
+        "name": "Następny krok"
+      },
+      "previous_step": {
+        "name": "Poprzedni krok"
+      },
+      "start_cooking": {
+        "name": "Rozpocznij gotowanie"
+      }
+    },
+    "image": {
+      "cooking": {
+        "name": "Gotowanie"
+      }
+    },
+    "sensor": {
+      "cooking": {
+        "name": "Gotowanie",
+        "state": {
+          "idle": "Bezczynny",
+          "waiting": "Oczekiwanie na telefon",
+          "cooking": "Gotowanie"
+        }
+      }
+    },
+    "text": {
+      "recipe": {
+        "name": "Przepis"
+      }
+    },
+    "select": {
+      "screen": {
+        "name": "Ekran"
+      },
+      "matches": {
+        "name": "Dopasowania"
+      }
+    },
+    "switch": {
+      "without_phone": {
+        "name": "Bez telefonu"
+      }
+    }
+  },
+  "services": {
+    "show_cook_display": {
+      "name": "Pokaż ekran gotowania",
+      "description": "Umieść wyświetlacz trybu gotowania weReci na ekranie i wyślij link parowania na telefon. Telefon nim steruje.",
+      "fields": {
+        "entity_id": {
+          "name": "Odtwarzacz multimedialny",
+          "description": "Urządzenie Cast (Nest Hub, Chromecast), Android TV lub Fire TV."
+        },
+        "browser_id": {
+          "name": "Identyfikator przeglądarki",
+          "description": "Przeglądarka browser_mod, np. tablet naścienny. Użyj zamiast odtwarzacza multimedialnego."
+        },
+        "notify": {
+          "name": "Powiadomienia",
+          "description": "Usługi powiadomień, do których wysłać link parowania. Domyślnie: każda aplikacja mobilna."
+        },
+        "dashboard_path": {
+          "name": "Ścieżka panelu",
+          "description": "Tylko przy własnym panelu dla wyświetlacza. Domyślnie: ten dostarczony przez weReci."
+        },
+        "view_path": {
+          "name": "Ścieżka widoku",
+          "description": "Tylko przy własnym panelu: widok zawierający kartę strony internetowej."
+        },
+        "return_path": {
+          "name": "Ścieżka powrotu",
+          "description": "Dokąd wraca przeglądarka browser_mod, gdy wyświetlacz przestaje działać."
+        },
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Które konto weReci, jeśli skonfigurowano więcej niż jedno."
+        },
+        "recipe": {
+          "name": "Przepis",
+          "description": "Przepis do otwarcia, według nazwy. Nazwa musi przypominać tytuł przepisu (zobacz Zezwalaj na najbliższe dopasowanie)."
+        },
+        "recipe_id": {
+          "name": "ID przepisu",
+          "description": "Przepis do otwarcia, według jego id weReci (tak jak zwracają go narzędzia przepisów). Użyj zamiast nazwy."
+        },
+        "without_phone": {
+          "name": "Bez telefonu",
+          "description": "Home Assistant prowadzi gotowanie samodzielnie: bez telefonu, bez powiadomień. Wymaga przepisu. Skalowanie i zamiany działają z ekranu (korzystają z Twojego limitu AI weReci); opcja Rozłóż na czynniki jest dostępna, gdy przepis został już rozłożony w aplikacji."
+        },
+        "allow_closest": {
+          "name": "Zezwalaj na najbliższe dopasowanie",
+          "description": "Wyszukiwanie weReci zawsze znajduje najbliższy przepis, nawet gdy nic nie pasuje. Wyłączone (domyślnie): nazwa musi przypominać tytuł przepisu, w przeciwnym razie akcja odmawia. Włączone: gotuje się najbliższe dopasowanie mimo to."
+        }
+      }
+    },
+    "stop_cook_display": {
+      "name": "Zatrzymaj ekran gotowania",
+      "description": "Zamknij ekran gotowania i zwolnij ekran.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Które konto weReci, jeśli skonfigurowano więcej niż jedno."
+        }
+      }
+    },
+    "toggle_ingredient": {
+      "name": "Zaznacz składnik",
+      "description": "Zaznacz lub odznacz jeden składnik na ekranie gotowania.",
+      "fields": {
+        "index": {
+          "name": "Indeks",
+          "description": "Pozycja na liście składników czujnika, licząc od 0."
+        },
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Które konto weReci, jeśli skonfigurowano więcej niż jedno."
+        }
+      }
+    }
+  }
+}
