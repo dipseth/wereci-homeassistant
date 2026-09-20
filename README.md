@@ -115,7 +115,22 @@ The "new at this step" ingredient rail is the one thing a phone-driven cook has 
 | Android TV / Fire TV (`androidtv`) | adb `VIEW` intent | nothing else |
 | Android TV Remote | `media_player.play_media` (url) | nothing else |
 
+<p align="center">
+  <img src="docs/screenshots/dashboard-cooking.webp" alt="The weReci dashboard in Home Assistant while cooking: the live cook display at the top, Back / Next / Stop, the Cook something form and the recipe's ingredients as a to-do list" width="880">
+</p>
+
 **The weReci dashboard** appears in the sidebar by itself — there is nothing to build. Start a cook from it: type what you want under **Recipe** (words, or a recipe id) — weReci is searched in the background and **Matches** fills with what it found. Words that name one recipe pick it for you; a vague word (“pasta”) leaves the pick to you. Then pick a screen, choose whether a phone is involved, press **Start cooking**. Building your own card? `select.…_matches` carries the whole search as attributes: `query`, `searching`, `error`, `recipe_id` (the pick) and `matches` (`id`, `title`, `cuisine`, `cookbook`). While a display is up, the page is headed by the live cook display itself — the very page the kitchen screen shows, in a frame, so it takes taps just like the screen does (scaling, swaps, Break it down); when nothing is cooking, the cooking picture with the search line under it takes that place. Below sit Back / Next / Stop, those controls and, once a recipe is up, the ingredients as a to-do list: ticking a box there is the same check-off as a tap on the kitchen screen, and a tick on the screen (or the phone) moves the box here. On a phone-width screen the frame is small and the receiver's text with it; the step buttons and the ingredients under it are the readable copy there. The next tab over is your synced shopping list (List It), so the cook and the shop live in one place. The same dashboard holds the hidden full-screen view that Cast devices and browser_mod browsers are shown; it points at a local address (`display_path` on `sensor.…_cooking`) that forwards to whichever cook display is live. Treat `display_path` like a password for your kitchen screen: anyone who can reach your Home Assistant and knows it can see the recipe step being cooked, and nothing else.
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/screenshots/dashboard-idle.webp" alt="The dashboard when nothing is cooking: the weReci mark, and the Matches list open under a search for “pasta”" width="440"></td>
+    <td align="center"><img src="docs/screenshots/entities-and-shopping-list.webp" alt="The integration's entities on the device page beside the synced shopping list as a to-do card" width="440"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Nothing cooking: search, then pick under <b>Matches</b></sub></td>
+    <td align="center"><sub>The entities, and the shared shopping list as a to-do</sub></td>
+  </tr>
+</table>
 
 **A “now cooking” tile for your own dashboard.** `image.…_cooking` is the picture that panel uses: the weReci mark when idle, the pairing code while it waits for a phone, the recipe's photo while cooking (its title, when it has no photo). It is pushed when the recipe changes, not polled. With Home Assistant's stock [picture-glance card](https://www.home-assistant.io/dashboards/picture-glance/) — no iframe, no custom cards, so it also works in the companion apps and on wall tablets — paste this, with your own entity ids:
 
