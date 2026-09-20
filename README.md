@@ -155,6 +155,8 @@ The card's `title` is fixed text, not a template, so it cannot name the recipe; 
 
 Don't want it, or the to-do list? **Settings → Devices & services → weReci → the gear on the account** has a checkbox for each: *Shopping list* and *weReci control panel*. Turning the panel off hides the sidebar entry; cook displays keep working.
 
+Home Assistant also adds its own **To-do lists** entry to the sidebar the moment any to-do entity exists — weReci's included. With the shopping list a tab in the weReci dashboard you may not want two doors: **Settings → Dashboards → To-do lists → Show in sidebar** turns that one off for everyone. The lists themselves, the stock to-do card and voice all keep working; it is only the sidebar entry.
+
 Rather lay it out yourself? Put a webpage card on `display_path` in any dashboard and pass `dashboard_path` / `view_path` to the service. A dashboard of your own at `/wereci-cook` is left alone.
 
 `wereci.stop_cook_display` closes it and gives the screen back; closing Cook Mode on the phone does the same.
