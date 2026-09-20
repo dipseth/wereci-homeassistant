@@ -31,14 +31,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "What weReci adds",
+        "title": "weReci dashboard pages",
+        "description": "A page each. Turn both off and the dashboard leaves the sidebar; your entities, voice and cook displays keep working either way.",
         "data": {
-          "shopping_list": "Shopping list",
-          "control_panel": "weReci control panel"
+          "shopping_list": "Shopping list page",
+          "control_panel": "Cook page"
         },
         "data_description": {
-          "shopping_list": "Your synced weReci list as a to-do list entity.",
-          "control_panel": "The weReci dashboard in the sidebar: start a cook, step through it, see the screen. Off hides it; cook displays keep working."
+          "shopping_list": "Your synced weReci list, as a page on the dashboard. The to-do entity is there either way.",
+          "control_panel": "Start a cook, step through it, and watch the screen."
         }
       }
     }

@@ -1,6 +1,9 @@
 """The weReci dashboard — provided, not hand-built.
 
-Three views per account, generated on every load (nothing is stored, read-only):
+Up to three views per account, generated on every load (nothing is stored,
+read-only). The two pages below are a checkbox each, independent of one
+another; with both off the account contributes only the hidden display view
+and the dashboard leaves the sidebar:
 
 - a control panel, in sections: while a display is up, the live receiver
   itself in an iframe on `display_path` (the same page the kitchen screen
@@ -67,8 +70,8 @@ class CookDashboard(dashboard.LovelaceConfig):
             url = base + display.display_path
             if entry.options.get(CONF_CONTROL_PANEL, True):
                 views.append(self._control_view(entry))
-                if entry.options.get(CONF_SHOPPING_LIST, True):
-                    views.append(self._list_view(entry))
+            if entry.options.get(CONF_SHOPPING_LIST, True):
+                views.append(self._list_view(entry))
             views.append(
                 {
                     "path": display.view_path,
@@ -302,12 +305,23 @@ class CookDashboard(dashboard.LovelaceConfig):
             entries = [*entries, setting_up]
         _register_panel(
             self.hass,
-            show_in_sidebar=any(
-                entry.options.get(CONF_CONTROL_PANEL, True) for entry in entries
-            ),
+            show_in_sidebar=any(_shows_a_page(entry) for entry in entries),
             update=True,
         )
         self._config_updated()
+
+
+def _shows_a_page(entry: Any) -> bool:
+    """Whether this account asks for either page.
+
+    Neither is a dashboard with nothing on it but the hidden display view, so
+    the sidebar entry comes off — the display view itself keeps being served,
+    and a cook display goes on working.
+    """
+    return bool(
+        entry.options.get(CONF_CONTROL_PANEL, True)
+        or entry.options.get(CONF_SHOPPING_LIST, True)
+    )
 
 
 def _register_panel(hass: HomeAssistant, *, show_in_sidebar: bool, update: bool) -> None:
