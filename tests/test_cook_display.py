@@ -18,6 +18,8 @@ from custom_components.wereci.api import WereciError
 SENSOR = "sensor.wereci_cook_example_test_cooking"
 IMAGE = "image.wereci_cook_example_test_cooking"
 NEXT = "button.wereci_cook_example_test_next_step"
+INGREDIENTS = "todo.wereci_cook_example_test_ingredients"
+SHOPPING_LIST = "todo.wereci_cook_example_test_shopping_list"
 START = "button.wereci_cook_example_test_start_cooking"
 RECIPE_BOX = "text.wereci_cook_example_test_recipe"
 SCREEN = "select.wereci_cook_example_test_screen"
@@ -180,6 +182,73 @@ async def test_snapshot_feeds_the_sensor_and_buttons_send_intent(
     ]
 
 
+async def test_ingredients_are_a_todo_list_that_ticks_the_screen(
+    hass: HomeAssistant, entry, list_call, relay
+) -> None:
+    """Each box is the same check-off as a tap on the receiver's rail."""
+    await _setup(hass, entry)
+    # Nothing cooking: the list is unavailable, not empty.
+    assert hass.states.get(INGREDIENTS).state == "unavailable"
+    async_mock_service(hass, "cast", "show_lovelace_view")
+    await _show(hass, entity_id=_cast_player(hass), notify=[])
+
+    snapshot = {
+        **SNAPSHOT,
+        "allIngredients": [
+            {"text": "2 carrots", "checked": True, "i": 0},
+            {"text": "1 onion", "checked": False, "note": "soup", "i": 1},
+            {"text": "1 l stock", "checked": False, "i": 2},
+        ],
+    }
+    relay.polls.put_nowait(
+        _Res(200, {"version": 1, "paired": True, "state": json.dumps(snapshot)})
+    )
+    await asyncio.sleep(0)
+    await hass.async_block_till_done()
+
+    assert hass.states.get(INGREDIENTS).state == "2"  # two still to add
+    res = await hass.services.async_call(
+        "todo", "get_items", {"entity_id": INGREDIENTS},
+        blocking=True, return_response=True,
+    )
+    items = res[INGREDIENTS]["items"]
+    assert [(i["uid"], i["summary"], i["status"]) for i in items] == [
+        ("0", "2 carrots", "completed"),
+        ("1", "1 onion", "needs_action"),
+        ("2", "1 l stock", "needs_action"),
+    ]
+    assert items[1]["description"] == "soup"
+
+    # Ticking sends intent; the phone repaints, and only then does the box move.
+    await hass.services.async_call(
+        "todo", "update_item",
+        {"entity_id": INGREDIENTS, "item": "1", "status": "completed"},
+        blocking=True,
+    )
+    # Unticking the one already done is a toggle too; a no-op tick is not sent.
+    await hass.services.async_call(
+        "todo", "update_item",
+        {"entity_id": INGREDIENTS, "item": "0", "status": "needs_action"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "todo", "update_item",
+        {"entity_id": INGREDIENTS, "item": "2", "status": "needs_action"},
+        blocking=True,
+    )
+    assert relay.commands == [
+        {"token": TOKEN, "cmd": {"do": "toggle", "i": 1}},
+        {"token": TOKEN, "cmd": {"do": "toggle", "i": 0}},
+    ]
+    # The recipe owns the words.
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "todo", "update_item",
+            {"entity_id": INGREDIENTS, "item": "2", "rename": "2 l stock"},
+            blocking=True,
+        )
+
+
 async def test_phone_hanging_up_ends_the_session_and_frees_the_screen(
     hass: HomeAssistant, entry, list_call, relay
 ) -> None:
@@ -256,7 +325,7 @@ async def test_the_dashboard_comes_with_the_integration(
     config = (await ws.receive_json())["result"]
 
     path = hass.states.get(SENSOR).attributes["display_path"]
-    control, display = config["views"]
+    control, shopping, display = config["views"]
     assert display == {
         "path": f"display-{entry.entry_id.lower()}",
         "title": "Cook display (cook@example.test)",
@@ -278,6 +347,15 @@ async def test_the_dashboard_comes_with_the_integration(
     assert not [c for c in control["cards"] if c["type"] == "iframe"]
     assert SENSOR in control["cards"][2]["content"]
     assert control["cards"][0]["entities"] == [RECIPE_BOX, MATCHES, SCREEN, NO_PHONE, START]
+    # The ingredients are a stock to-do card over the entity that ticks the screen.
+    assert control["cards"][3] == {
+        "type": "todo-list", "entity": INGREDIENTS, "title": "Ingredients"
+    }
+    # The synced shopping list is the next tab over, not a dashboard of its own.
+    assert shopping["path"] == f"list-{entry.entry_id.lower()}"
+    assert shopping["cards"] == [
+        {"type": "todo-list", "entity": SHOPPING_LIST, "title": "Shopping list"}
+    ]
     panel = hass.data["frontend_panels"]["wereci-cook"]
     assert panel.config == {"mode": "yaml"}
     assert panel.to_response()["show_in_sidebar"] is True

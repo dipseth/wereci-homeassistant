@@ -1,10 +1,11 @@
 """The weReci dashboard — provided, not hand-built.
 
-Two views per account, generated on every load (nothing is stored, read-only):
+Three views per account, generated on every load (nothing is stored, read-only):
 
 - a control panel: a picture-glance of what is cooking with the step and stop
   buttons along its foot (tap the picture for the live screen), the step's
-  text, and the ingredient list;
+  text, and the ingredients as a to-do list that ticks the screen;
+- the shopping list (List It) as a to-do list, the next tab over;
 - the display view Cast devices and browser_mod browsers are shown: a single
   full-screen webpage card on `display_path`. Hidden from the tabs; reached
   by path.
@@ -28,6 +29,7 @@ from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_CONTROL_PANEL,
+    CONF_SHOPPING_LIST,
     DEFAULT_DASHBOARD_PATH,
     DOMAIN,
     ICON_MARK,
@@ -63,6 +65,8 @@ class CookDashboard(dashboard.LovelaceConfig):
             url = base + display.display_path
             if entry.options.get(CONF_CONTROL_PANEL, True):
                 views.append(self._control_view(entry))
+                if entry.options.get(CONF_SHOPPING_LIST, True):
+                    views.append(self._list_view(entry))
             views.append(
                 {
                     "path": display.view_path,
@@ -74,12 +78,16 @@ class CookDashboard(dashboard.LovelaceConfig):
             )
         return {"title": "weReci", "views": views}
 
-    def _control_view(self, entry: Any) -> dict[str, Any]:
+    def _entity(self, entry: Any) -> Any:
         reg = er.async_get(self.hass)
 
         def entity(platform: str, key: str) -> str | None:
             return reg.async_get_entity_id(platform, DOMAIN, f"{entry.unique_id}_{key}")
 
+        return entity
+
+    def _control_view(self, entry: Any) -> dict[str, Any]:
+        entity = self._entity(entry)
         sensor = entity("sensor", "cooking")
         now = (
             f"{{% set s = '{sensor}' %}}"
@@ -109,12 +117,6 @@ class CookDashboard(dashboard.LovelaceConfig):
             "{% endif %}"
             "{% endif %}"
         )
-        ingredients = (
-            f"{{% set s = '{sensor}' %}}"
-            "{% for i in state_attr(s, 'ingredients') or [] %}"
-            "{{ '✅' if i.checked else '⬜' }} {{ i.text }}\n"
-            "{% endfor %}"
-        )
         return {
             "path": f"control-{entry.entry_id.lower()}",
             "title": entry.title,
@@ -137,7 +139,28 @@ class CookDashboard(dashboard.LovelaceConfig):
                 },
                 self._glance(entry, entity),
                 {"type": "markdown", "content": now},
-                {"type": "markdown", "title": "Ingredients", "content": ingredients},
+                # A stock to-do card over the ingredients entity: each box is
+                # the same check-off as a tap on the kitchen screen.
+                {
+                    "type": "todo-list",
+                    "entity": entity("todo", "ingredients"),
+                    "title": "Ingredients",
+                },
+            ],
+        }
+
+    def _list_view(self, entry: Any) -> dict[str, Any]:
+        """The synced shopping list (List It), one tab over from the cook."""
+        return {
+            "path": f"list-{entry.entry_id.lower()}",
+            "title": "Shopping list",
+            "icon": "mdi:cart-outline",
+            "cards": [
+                {
+                    "type": "todo-list",
+                    "entity": self._entity(entry)("todo", "shopping_list"),
+                    "title": "Shopping list",
+                }
             ],
         }
 

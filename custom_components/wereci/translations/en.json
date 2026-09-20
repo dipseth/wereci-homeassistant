@@ -47,6 +47,9 @@
     "todo": {
       "shopping_list": {
         "name": "Shopping list"
+      },
+      "ingredients": {
+        "name": "Ingredients"
       }
     },
     "button": {

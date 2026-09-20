@@ -1,4 +1,9 @@
-"""The synced weReci shopping list as a Home Assistant to-do list."""
+"""weReci lists as Home Assistant to-do lists.
+
+Two of them: the synced shopping list (List It), and the ingredients of what
+is cooking on the cook display — ticking one there is the same check-off as a
+tap on the kitchen screen.
+"""
 
 from __future__ import annotations
 
@@ -18,7 +23,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_SHOPPING_LIST, DOMAIN
+from .cook_display import STATUS_COOKING, CookDisplay
 from .coordinator import ListItem, WereciConfigEntry, WereciListCoordinator
+from .entity import CookDisplayEntity
 
 
 async def async_setup_entry(
@@ -26,15 +33,19 @@ async def async_setup_entry(
     entry: WereciConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the list entity, unless the account's options turn it off."""
-    if not entry.options.get(CONF_SHOPPING_LIST, True):
+    """Add the ingredients list, and the shopping list unless the options turn it off."""
+    entities: list[TodoListEntity] = [
+        CookIngredients(entry.runtime_data.cook_display, entry, "ingredients")
+    ]
+    if entry.options.get(CONF_SHOPPING_LIST, True):
+        entities.append(WereciShoppingList(entry.runtime_data.list_coordinator, entry))
+    else:
         reg = er.async_get(hass)
         if entity_id := reg.async_get_entity_id(
             "todo", DOMAIN, f"{entry.unique_id}_shopping_list"
         ):
             reg.async_remove(entity_id)
-        return
-    async_add_entities([WereciShoppingList(entry.runtime_data.list_coordinator, entry)])
+    async_add_entities(entities)
 
 
 def _description(item: ListItem) -> str | None:
@@ -131,3 +142,73 @@ class WereciShoppingList(CoordinatorEntity[WereciListCoordinator], TodoListEntit
     async def async_delete_todo_items(self, uids: list[str]) -> None:
         """Take lines off the list (weReci keeps an undoable tombstone)."""
         await self.coordinator.async_change(remove=uids)
+
+
+class CookIngredients(CookDisplayEntity, TodoListEntity):
+    """The ingredients of what is cooking, ticked off the same way the screen is.
+
+    Read from the snapshot the sender pushes; a tick sends the toggle intent
+    round the relay, exactly as a tap on the receiver's rail does, and the
+    repainted snapshot moves the box. Lines cannot be added, renamed or
+    removed here — the recipe owns them.
+    """
+
+    _attr_supported_features = TodoListEntityFeature.UPDATE_TODO_ITEM
+
+    def __init__(self, display: CookDisplay, entry: WereciConfigEntry, key: str) -> None:
+        """Initialize."""
+        super().__init__(display, entry, key)
+
+    @property
+    def available(self) -> bool:
+        """Only while something is cooking."""
+        return self._display.status == STATUS_COOKING
+
+    def _lines(self) -> list[tuple[int, dict[str, Any]]]:
+        session = self._display.session
+        snap = session.snapshot if session else None
+        if not snap:
+            return []
+        out: list[tuple[int, dict[str, Any]]] = []
+        for pos, line in enumerate(snap.get("allIngredients") or []):
+            if not isinstance(line, dict):
+                continue
+            # `i` names the line in the recipe's own order — what a check-off
+            # has to say. Older senders leave it out; then position is it.
+            i = line.get("i")
+            out.append((i if isinstance(i, int) else pos, line))
+        return out
+
+    @property
+    def todo_items(self) -> list[TodoItem] | None:
+        """The rail, in the recipe's order."""
+        if self._display.status != STATUS_COOKING:
+            return None
+        return [
+            TodoItem(
+                uid=str(i),
+                summary=str(line.get("text") or ""),
+                status=(
+                    TodoItemStatus.COMPLETED
+                    if line.get("checked")
+                    else TodoItemStatus.NEEDS_ACTION
+                ),
+                description=line.get("note") or None,
+            )
+            for i, line in self._lines()
+        ]
+
+    async def async_update_todo_item(self, item: TodoItem) -> None:
+        """A tick or untick is one toggle; anything else is refused."""
+        current = next(
+            (line for i, line in self._lines() if str(i) == item.uid), None
+        )
+        if current is None or item.uid is None:
+            raise ServiceValidationError("That ingredient is not on the screen")
+        if item.summary and item.summary != current.get("text"):
+            raise ServiceValidationError(
+                "Ingredients come from the recipe and cannot be renamed here"
+            )
+        checked = item.status == TodoItemStatus.COMPLETED
+        if checked != bool(current.get("checked")):
+            await self._display.async_command({"do": "toggle", "i": int(item.uid)})

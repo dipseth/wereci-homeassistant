@@ -27,7 +27,15 @@ async def test_both_surfaces_are_on_until_turned_off(
 ) -> None:
     await _setup(hass, entry)
     assert hass.states.get(ENTITY) is not None
-    assert len(await _views(hass, hass_ws_client)) == 2
+    # Control panel, shopping list tab, hidden display view.
+    assert len(await _views(hass, hass_ws_client)) == 3
+
+    await _save(hass, entry, shopping_list=False, control_panel=True)
+    # No list, no list tab; the ingredients list is the cook's, and stays.
+    control, display = await _views(hass, hass_ws_client)
+    assert control["path"].startswith("control-")
+    assert hass.states.get(ENTITY) is None
+    assert hass.states.get(ENTITY.replace("shopping_list", "ingredients")) is not None
 
     await _save(hass, entry, shopping_list=False, control_panel=False)
 
@@ -44,4 +52,4 @@ async def test_both_surfaces_are_on_until_turned_off(
     assert hass.states.get(ENTITY) is not None
     assert panel is not hass.data["frontend_panels"]["wereci-cook"]
     assert hass.data["frontend_panels"]["wereci-cook"].to_response()["show_in_sidebar"]
-    assert len(await _views(hass, hass_ws_client)) == 2
+    assert len(await _views(hass, hass_ws_client)) == 3
