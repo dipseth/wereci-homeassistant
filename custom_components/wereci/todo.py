@@ -17,12 +17,11 @@ from homeassistant.components.todo import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_SHOPPING_LIST, DOMAIN
+from .const import DOMAIN
 from .cook_display import STATUS_COOKING, CookDisplay
 from .coordinator import ListItem, WereciConfigEntry, WereciListCoordinator
 from .entity import CookDisplayEntity
@@ -33,19 +32,18 @@ async def async_setup_entry(
     entry: WereciConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the ingredients list, and the shopping list unless the options turn it off."""
-    entities: list[TodoListEntity] = [
-        CookIngredients(entry.runtime_data.cook_display, entry, "ingredients")
-    ]
-    if entry.options.get(CONF_SHOPPING_LIST, True):
-        entities.append(WereciShoppingList(entry.runtime_data.list_coordinator, entry))
-    else:
-        reg = er.async_get(hass)
-        if entity_id := reg.async_get_entity_id(
-            "todo", DOMAIN, f"{entry.unique_id}_shopping_list"
-        ):
-            reg.async_remove(entity_id)
-    async_add_entities(entities)
+    """Add both lists: the cook's ingredients, and the synced shopping list.
+
+    Neither depends on the options: those pick which pages the weReci dashboard
+    shows, not which entities exist. An entity you would rather not see is
+    hidden or disabled the same way as any other.
+    """
+    async_add_entities(
+        [
+            CookIngredients(entry.runtime_data.cook_display, entry, "ingredients"),
+            WereciShoppingList(entry.runtime_data.list_coordinator, entry),
+        ]
+    )
 
 
 def _description(item: ListItem) -> str | None:

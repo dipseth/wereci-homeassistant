@@ -20,7 +20,9 @@ CONF_AUTHORIZE_URL = "authorize_url"
 CONF_TOKEN_URL = "token_url"
 CONF_DISPLAY_SECRET = "display_secret"
 
-# Options, per account. Both default to on.
+# Options, per account: a page each on the provided dashboard, independent of
+# one another and of the entities. Both default to on; neither one shown and
+# the dashboard leaves the sidebar.
 CONF_SHOPPING_LIST = "shopping_list"
 CONF_CONTROL_PANEL = "control_panel"
 

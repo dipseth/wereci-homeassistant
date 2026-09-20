@@ -153,7 +153,7 @@ entities:
 
 The card's `title` is fixed text, not a template, so it cannot name the recipe; the step's words are on `sensor.…_cooking` (`title`, `step`, `total_steps`, `step_text`) for a markdown card beside it. The picture is for glancing and stepping — the kitchen screen itself still shows the live receiver.
 
-Don't want it, or the to-do list? **Settings → Devices & services → weReci → the gear on the account** has a checkbox for each: *Shopping list* and *weReci control panel*. Turning the panel off hides the sidebar entry; cook displays keep working.
+Don't want a page? **Settings → Devices & services → weReci → the gear on the account** has a checkbox for each one: *Cook page* and *Shopping list page*. They are independent — keep either on its own. Turn both off and the dashboard leaves the sidebar; the entities, voice and cook displays are untouched, because the checkboxes pick pages, not features.
 
 Home Assistant also adds its own **To-do lists** entry to the sidebar the moment any to-do entity exists — weReci's included. With the shopping list a tab in the weReci dashboard you may not want two doors: **Settings → Dashboards → To-do lists → Show in sidebar** turns that one off for everyone. The lists themselves, the stock to-do card and voice all keep working; it is only the sidebar entry.
 
