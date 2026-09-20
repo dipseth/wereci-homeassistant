@@ -39,6 +39,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# The whole width of a section, however many columns it spans.
+FULL = {"columns": "full"}
+
 
 class CookDashboard(dashboard.LovelaceConfig):
     """A generated dashboard: one cook-display view per loaded account."""
@@ -143,9 +146,11 @@ class CookDashboard(dashboard.LovelaceConfig):
                 {
                     "type": "grid",
                     "column_span": 2,
+                    # A section's grid is one column wide per column spanned,
+                    # so both cards say so, or they sit side by side.
                     "cards": [
-                        self._glance(entry, entity),
-                        {"type": "markdown", "content": now},
+                        {**self._glance(entry, entity), "grid_options": FULL},
+                        {"type": "markdown", "content": now, "grid_options": FULL},
                     ],
                 },
                 {

@@ -343,6 +343,8 @@ async def test_the_dashboard_comes_with_the_integration(
     hero, cook, ingredients = control["sections"]
     assert hero["column_span"] == 2
     glance, step = hero["cards"]
+    # Stacked, not side by side: each card takes the whole spanned width.
+    assert glance["grid_options"] == step["grid_options"] == {"columns": "full"}
     assert (glance["type"], glance["image_entity"]) == ("picture-glance", IMAGE)
     assert glance["entities"][2]["tap_action"]["target"] == {"entity_id": NEXT}
     assert glance["entities"][3]["tap_action"]["perform_action"] == "wereci.stop_cook_display"
