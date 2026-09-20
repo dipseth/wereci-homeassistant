@@ -186,8 +186,11 @@ class CookDashboard(dashboard.LovelaceConfig):
                         # Relative URL: this panel is same-origin with the view,
                         # unlike HA's Cast receiver, which is why the display view
                         # below needs the absolute form.
+                        # `columns: full` — a card in a section defaults to 12 of
+                        # the section's columns, half of a column_span-2 section.
                         {
                             "type": "vertical-stack",
+                            "grid_options": {"columns": "full"},
                             "cards": [
                                 {
                                     "type": "iframe",
@@ -206,6 +209,7 @@ class CookDashboard(dashboard.LovelaceConfig):
                         # A stack: stacked whatever the section grid resolves to.
                         {
                             "type": "vertical-stack",
+                            "grid_options": {"columns": "full"},
                             "cards": [
                                 {
                                     "type": "picture-entity",
