@@ -347,15 +347,14 @@ async def test_the_dashboard_comes_with_the_integration(
         {"condition": "state", "entity": SENSOR, "state_not": "idle"}
     ]
     assert idle["visibility"] == [{"condition": "state", "entity": SENSOR, "state": "idle"}]
-    heading, frame = live["cards"]
+    heading, live_stack = live["cards"]
     assert heading["badges"] == [{"type": "entity", "entity": SENSOR}]
+    # Wrapped in a stack: a bare iframe card in a sections grid ignores its
+    # aspect ratio and sizes by grid rows only (auto rows → zero height).
     # Relative: same origin as the panel. Only the Cast view needs the absolute URL.
-    assert frame == {
-        "type": "iframe",
-        "url": path,
-        "aspect_ratio": "56%",
-        "grid_options": {"columns": "full", "rows": "auto"},
-    }
+    (frame,) = live_stack["cards"]
+    assert live_stack["type"] == "vertical-stack"
+    assert frame == {"type": "iframe", "url": path, "aspect_ratio": "56%"}
     (stack,) = idle["cards"]
     picture, search = stack["cards"]
     assert (picture["type"], picture["image_entity"]) == ("picture-entity", IMAGE)

@@ -178,16 +178,23 @@ class CookDashboard(dashboard.LovelaceConfig):
                             "icon": "mdi:television-play",
                             "badges": [{"type": "entity", "entity": sensor}],
                         },
-                        # Relative: this panel is same-origin with the view, unlike
-                        # HA's Cast receiver, which is why the display view below
-                        # needs the absolute form.
+                        # In a sections grid the iframe card IGNORES aspect_ratio
+                        # and takes its height from grid rows alone — `rows: auto`
+                        # collapses it to nothing (the 0.10.0 regression). Inside a
+                        # stack the card is no longer grid-laid-out, so the aspect
+                        # ratio sizes it, and the stack itself grows with content.
+                        # Relative URL: this panel is same-origin with the view,
+                        # unlike HA's Cast receiver, which is why the display view
+                        # below needs the absolute form.
                         {
-                            "type": "iframe",
-                            "url": display.display_path,
-                            "aspect_ratio": "56%",
-                            # rows: auto, or the grid's row count squashes the
-                            # aspect ratio.
-                            "grid_options": {"columns": "full", "rows": "auto"},
+                            "type": "vertical-stack",
+                            "cards": [
+                                {
+                                    "type": "iframe",
+                                    "url": display.display_path,
+                                    "aspect_ratio": "56%",
+                                }
+                            ],
                         },
                     ],
                 },
