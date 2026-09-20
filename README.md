@@ -48,6 +48,8 @@ Sign in once and your [weReci](https://wereci.xyz) cookbook becomes part of your
 
 That's it. The **weReci** dashboard is now in your sidebar, and the shopping list and cooking entities exist. Disconnect any time from weReci → *Your AI → Connected AI apps*.
 
+> **Note:** each connected account has its own settings (the gear on the entry under *Devices & services*) with a checkbox for the **Cook page** and one for the **Shopping list page**. Untick either or both to keep those views out of the dashboard. Entities, voice and cook displays are unaffected.
+
 ## The dashboard
 
 The integration creates a **weReci** dashboard for you. It has two tabs: **Cook** and **Shopping list**.
