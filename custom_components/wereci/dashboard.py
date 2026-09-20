@@ -2,10 +2,11 @@
 
 Three views per account, generated on every load (nothing is stored, read-only):
 
-- a control panel, in sections: a picture-glance of what is cooking as the
-  hero row, with the step and stop buttons along its foot (tap the picture for
-  the live screen) and the step's text under it; below, the controls that
-  start a cook and the ingredients as a to-do list that ticks the screen;
+- a control panel, in sections: while a display is up, the live receiver
+  itself in an iframe on `display_path` (the same page the kitchen screen
+  shows); when idle, the cooking picture with the search line under it. Below,
+  the step buttons and the ingredients as a to-do list that ticks the screen
+  (cooking only), and the controls that start a cook;
 - the shopping list (List It) as a to-do list, the next tab over;
 - the display view Cast devices and browser_mod browsers are shown: a single
   full-screen webpage card on `display_path`. Hidden from the tabs; reached
@@ -38,9 +39,6 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-# The whole width of a section, however many columns it spans.
-FULL = {"columns": "full"}
 
 
 class CookDashboard(dashboard.LovelaceConfig):
@@ -91,23 +89,27 @@ class CookDashboard(dashboard.LovelaceConfig):
         return entity
 
     def _control_view(self, entry: Any) -> dict[str, Any]:
-        """The cook, laid out as sections: the picture is the hero.
+        """The cook, in sections: the live receiver itself is the hero.
 
-        Its own row across the top, the step (or the search) as a line right
-        under it; the controls and the ingredients share the row below. The
-        picture already says what is cooking, so the text never repeats it.
+        Two hero sections that never show together: while a display is up
+        (waiting or cooking) an iframe on `display_path` shows the very page the
+        kitchen screen shows; when idle, the cooking picture with the search
+        line under it. Then the step buttons (cooking only), the controls that
+        start a cook, and the ingredients (cooking only).
+
+        The split is load-bearing. `display_path` is a stateless redirect, so
+        once the iframe has followed it to the live receiver nothing would
+        reload it when the cook ends — except the section hiding, which tears
+        the card down, and rebuilding it on the way back in fetches afresh.
+        The idle page refreshes itself every 10 s, so a newly started cook is
+        picked up on its own.
         """
         entity = self._entity(entry)
+        display = entry.runtime_data.cook_display
         sensor = entity("sensor", "cooking")
-        now = (
-            f"{{% set s = '{sensor}' %}}"
-            "{% if is_state(s, 'cooking') %}"
-            "**Step {{ state_attr(s, 'step') }} of {{ state_attr(s, 'total_steps') }}**"
-            "\n\n{{ state_attr(s, 'step_text') }}"
-            "{% elif is_state(s, 'waiting') %}"
-            "Open Cook Mode on your phone and enter **{{ state_attr(s, 'code') }}**."
-            "{% else %}"
-            f"{{% set m = '{entity('select', 'matches')}' %}}"
+        matches = entity("select", "matches")
+        search = (
+            f"{{% set m = '{matches}' %}}"
             "{% if state_attr(m, 'searching') %}"
             "Searching weReci for **{{ state_attr(m, 'query') }}**…"
             "{% elif state_attr(m, 'error') %}"
@@ -122,35 +124,119 @@ class CookDashboard(dashboard.LovelaceConfig):
             "{% else %}"
             "Type what you want to cook under **Recipe**."
             "{% endif %}"
-            "{% endif %}"
         )
         controls = [
             {"entity": e, "name": name}
             for e, name in (
                 (entity("text", "recipe"), "Recipe"),
-                (entity("select", "matches"), "Matches"),
+                (matches, "Matches"),
                 (entity("select", "screen"), "Screen"),
                 (entity("switch", "without_phone"), "Without a phone"),
                 (entity("button", "start_cooking"), "Start cooking"),
             )
             if e
         ]
+
+        def when(**condition: str) -> list[dict[str, str]]:
+            return [{"condition": "state", "entity": sensor, **condition}]
+
+        def step(key: str, name: str, icon: str) -> dict[str, Any]:
+            button = entity("button", key)
+            return {
+                "type": "tile",
+                "entity": button,
+                "name": name,
+                "icon": icon,
+                "vertical": True,
+                "hide_state": True,
+                "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {"entity_id": button},
+                },
+            }
+
         return {
             "path": f"control-{entry.entry_id.lower()}",
             "title": entry.title,
             "icon": ICON_MARK,
             "type": "sections",
             "max_columns": 2,
-            "dense_section_placement": True,
             "sections": [
                 {
                     "type": "grid",
                     "column_span": 2,
-                    # A section's grid is one column wide per column spanned,
-                    # so both cards say so, or they sit side by side.
+                    "visibility": when(state_not="idle"),
                     "cards": [
-                        {**self._glance(entry, entity), "grid_options": FULL},
-                        {"type": "markdown", "content": now, "grid_options": FULL},
+                        {
+                            "type": "heading",
+                            "heading": "Live cook display",
+                            "heading_style": "title",
+                            "icon": "mdi:television-play",
+                            "badges": [{"type": "entity", "entity": sensor}],
+                        },
+                        # Relative: this panel is same-origin with the view, unlike
+                        # HA's Cast receiver, which is why the display view below
+                        # needs the absolute form.
+                        {
+                            "type": "iframe",
+                            "url": display.display_path,
+                            "aspect_ratio": "56%",
+                            # rows: auto, or the grid's row count squashes the
+                            # aspect ratio.
+                            "grid_options": {"columns": "full", "rows": "auto"},
+                        },
+                    ],
+                },
+                {
+                    "type": "grid",
+                    "column_span": 2,
+                    "visibility": when(state="idle"),
+                    "cards": [
+                        # A stack: stacked whatever the section grid resolves to.
+                        {
+                            "type": "vertical-stack",
+                            "cards": [
+                                {
+                                    "type": "picture-entity",
+                                    "entity": entity("image", "cooking"),
+                                    "image_entity": entity("image", "cooking"),
+                                    "aspect_ratio": "16:9",
+                                    "show_name": False,
+                                    "show_state": False,
+                                    "fit_mode": "cover",
+                                },
+                                {"type": "markdown", "text_only": True, "content": search},
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "type": "grid",
+                    "visibility": when(state="cooking"),
+                    "cards": [
+                        {"type": "heading", "heading": "Steps", "heading_style": "subtitle"},
+                        {
+                            "type": "horizontal-stack",
+                            "cards": [
+                                step("previous_step", "Back", "mdi:chevron-left"),
+                                step("next_step", "Next", "mdi:chevron-right"),
+                                # A service tile needs an entity to hang on.
+                                {
+                                    "type": "tile",
+                                    "entity": sensor,
+                                    "name": "Stop",
+                                    "icon": "mdi:stop-circle-outline",
+                                    "vertical": True,
+                                    "hide_state": True,
+                                    "tap_action": {
+                                        "action": "perform-action",
+                                        "perform_action": f"{DOMAIN}.stop_cook_display",
+                                        "data": {"config_entry_id": entry.entry_id},
+                                    },
+                                },
+                            ],
+                        },
                     ],
                 },
                 {
@@ -165,9 +251,7 @@ class CookDashboard(dashboard.LovelaceConfig):
                 # to tick until a recipe is up, so the section waits for one.
                 {
                     "type": "grid",
-                    "visibility": [
-                        {"condition": "state", "entity": sensor, "state": "cooking"}
-                    ],
+                    "visibility": when(state="cooking"),
                     "cards": [
                         {"type": "heading", "heading": "Ingredients"},
                         {"type": "todo-list", "entity": entity("todo", "ingredients")},
@@ -188,54 +272,6 @@ class CookDashboard(dashboard.LovelaceConfig):
                     "entity": self._entity(entry)("todo", "shopping_list"),
                     "title": "Shopping list",
                 }
-            ],
-        }
-
-    def _glance(self, entry: Any, entity: Any) -> dict[str, Any]:
-        """The picture of what is cooking, with the step buttons along its foot.
-
-        A stock card over real entities, so the same YAML works as a tile on
-        anybody's own dashboard (README). Its `title` cannot be templated, so
-        the recipe's name is left to the picture and the text under it.
-        """
-        display = entry.runtime_data.cook_display
-
-        def press(key: str, icon: str) -> dict[str, Any]:
-            button = entity("button", key)
-            return {
-                "entity": button,
-                "icon": icon,
-                "tap_action": {
-                    "action": "perform-action",
-                    "perform_action": "button.press",
-                    "target": {"entity_id": button},
-                },
-            }
-
-        sensor = entity("sensor", "cooking")
-        return {
-            "type": "picture-glance",
-            "image_entity": entity("image", "cooking"),
-            "aspect_ratio": "16:9",
-            # The receiver itself is one tap away: scaling, swaps and Break it
-            # down are taps on IT, which a picture cannot take.
-            "tap_action": {
-                "action": "navigate",
-                "navigation_path": f"/{DEFAULT_DASHBOARD_PATH}/{display.view_path}",
-            },
-            "entities": [
-                {"entity": sensor, "show_state": True, "tap_action": {"action": "none"}},
-                press("previous_step", "mdi:chevron-left"),
-                press("next_step", "mdi:chevron-right"),
-                {
-                    "entity": sensor,
-                    "icon": "mdi:stop-circle-outline",
-                    "tap_action": {
-                        "action": "perform-action",
-                        "perform_action": f"{DOMAIN}.stop_cook_display",
-                        "data": {"config_entry_id": entry.entry_id},
-                    },
-                },
             ],
         }
 
