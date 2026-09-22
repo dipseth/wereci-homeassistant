@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "कुकिंग शुरू करें"
+      },
+      "refresh_shopping_list": {
+        "name": "शॉपिंग लिस्ट रिफ्रेश करें"
       }
     },
     "image": {

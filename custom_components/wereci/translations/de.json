@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "Kochen starten"
+      },
+      "refresh_shopping_list": {
+        "name": "Einkaufsliste aktualisieren"
       }
     },
     "image": {

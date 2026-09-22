@@ -118,3 +118,21 @@ def test_parse_list_shapes() -> None:
     assert parse_list({"available": False, "reason": "not_shared"}).available is False
     parsed = parse_list(LIST)
     assert parsed.seq == 7 and [i.key for i in parsed.items] == ["milk", "eggs"]
+
+
+async def test_the_refresh_button_asks_weReci_now(hass: HomeAssistant, entry, list_call) -> None:
+    list_call.return_value = {"available": False, "reason": "no_synced_list"}
+    await _setup(hass, entry)
+    assert hass.states.get(ENTITY).state == "unavailable"
+    calls_before = list_call.await_count
+    # The list was shared a moment ago; the slow poll hasn't looked yet.
+    list_call.return_value = LIST
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": "button.wereci_cook_example_test_refresh_shopping_list"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert list_call.await_count == calls_before + 1
+    assert len(await _items(hass)) == 2

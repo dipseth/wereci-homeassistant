@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "Bắt đầu nấu ăn"
+      },
+      "refresh_shopping_list": {
+        "name": "Làm mới danh sách mua sắm"
       }
     },
     "image": {

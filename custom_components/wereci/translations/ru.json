@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "Начать готовку"
+      },
+      "refresh_shopping_list": {
+        "name": "Обновить список покупок"
       }
     },
     "image": {

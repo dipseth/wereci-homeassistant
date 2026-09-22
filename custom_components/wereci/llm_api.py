@@ -75,6 +75,13 @@ class WereciTool(llm.Tool):
             raise HomeAssistantError(f"weReci error: {err}") from err
         except (httpx.HTTPError, McpError) as err:
             raise HomeAssistantError(f"weReci error: {err}") from err
+        # Whatever the assistant just did may have changed the list — "put
+        # the lasagna on my shared list" most of all — and the slow poll
+        # while no list is shared would otherwise leave the to-do stale for
+        # minutes. One list read, off the request path.
+        runtime = getattr(self._entry, "runtime_data", None)
+        if runtime is not None:
+            hass.async_create_task(runtime.list_coordinator.async_request_refresh())
         return result.model_dump(exclude_unset=True, exclude_none=True)
 
 

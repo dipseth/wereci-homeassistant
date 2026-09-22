@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "ابدأ الطهي"
+      },
+      "refresh_shopping_list": {
+        "name": "تحديث قائمة التسوق"
       }
     },
     "image": {

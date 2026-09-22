@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "开始烹饪"
+      },
+      "refresh_shopping_list": {
+        "name": "刷新购物清单"
       }
     },
     "image": {

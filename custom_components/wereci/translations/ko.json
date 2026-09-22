@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "요리 시작"
+      },
+      "refresh_shopping_list": {
+        "name": "쇼핑 목록 새로 고침"
       }
     },
     "image": {

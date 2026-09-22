@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "調理を開始"
+      },
+      "refresh_shopping_list": {
+        "name": "買い物リストを更新"
       }
     },
     "image": {

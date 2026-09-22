@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "Pişirmeye başla"
+      },
+      "refresh_shopping_list": {
+        "name": "Alışveriş listesini yenile"
       }
     },
     "image": {

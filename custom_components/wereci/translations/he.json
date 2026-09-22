@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "התחל לבשל"
+      },
+      "refresh_shopping_list": {
+        "name": "רענון רשימת הקניות"
       }
     },
     "image": {

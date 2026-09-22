@@ -161,7 +161,7 @@ The "new at this step" ingredient rail is the one thing a phone-driven cook has 
 
 ## The shopping list
 
-Your List It list shows up as `todo.…` in Home Assistant. Tick, add, rename and remove lines from a dashboard or by voice; your phones see the change, and the other way round. Home Assistant checks for changes every 30 seconds.
+Your List It list shows up as `todo.…` in Home Assistant. Tick, add, rename and remove lines from a dashboard or by voice; your phones see the change, and the other way round. Home Assistant checks for changes every 30 seconds while a list is shared, every 5 minutes while none is, and immediately after any weReci tool your assistant calls. `button.…_refresh_shopping_list` asks right now — press it after sharing a list from your phone.
 
 **Only a shared list syncs.** weReci keeps a list on its servers only when you share it: tap **Share the list** in List It (with or without a cookbook partner), ask your assistant to put things on your *shared* list, or turn on **Lists your assistant makes → share them by default** in weReci's settings. A list that lives only on your phone stays on your phone. Until a list is shared, this entity is `unavailable` with reason `no_synced_list`.
 
@@ -178,7 +178,7 @@ The entity's `reason` attribute says why:
 
 | `reason` | Meaning |
 |---|---|
-| `no_synced_list` | This account isn't sharing a list. Tap **Share the list** in List It, or ask your assistant to share one. Home Assistant checks again every 15 minutes while this is the answer. |
+| `no_synced_list` | This account isn't sharing a list. Tap **Share the list** in List It, or ask your assistant to share one. Home Assistant checks again every 5 minutes while this is the answer, or press **Refresh shopping list**. |
 | `not_shared` | Your cookbook partner has a shared list you haven't joined. Join from List It in the app. |
 | `permission_required` | The shopping-list permission wasn't approved. Remove and re-add the integration. |
 | `unavailable` | weReci couldn't be reached. |

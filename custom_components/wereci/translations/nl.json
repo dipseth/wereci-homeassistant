@@ -62,6 +62,9 @@
       },
       "start_cooking": {
         "name": "Starten met koken"
+      },
+      "refresh_shopping_list": {
+        "name": "Boodschappenlijst vernieuwen"
       }
     },
     "image": {
