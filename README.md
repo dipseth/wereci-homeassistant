@@ -30,7 +30,7 @@
 Sign in once and your [weReci](https://wereci.xyz) cookbook becomes part of your home:
 
 - 📺 **Cook on a kitchen screen.** Put a recipe on a Nest Hub, wall tablet, Android TV or Fire TV. Step through it from your phone, by voice, or with the buttons on the screen.
-- 🛒 **Shopping list as a to-do.** Your synced List It list appears as a Home Assistant to-do list. Tick or add lines here, on your phone, or by voice. They stay in sync.
+- 🛒 **Shopping list as a to-do.** Your shared List It list appears as a Home Assistant to-do list. Tick or add lines here, on your phone, or by voice. They stay in sync.
 - 🍳 **Recipes for Assist.** Ask your voice or chat assistant what you can cook, look up a recipe, or add its ingredients to the list.
 - 🧭 **A ready-made dashboard.** A weReci page appears in your sidebar the moment you connect. Search, pick a recipe, pick a screen, start cooking.
 
@@ -79,7 +79,7 @@ The integration creates a **weReci** dashboard for you. It has two tabs: **Cook*
 
 While cooking, the top of the page shows the live cook display itself: the same page your kitchen screen shows, in a frame. Taps work there just like on the screen. Below it are **Back / Next / Stop** and the recipe's ingredients as a to-do list. Tick a box in either place and the other follows.
 
-**Shopping list tab.** Your synced List It list, as a to-do card.
+**Shopping list tab.** Your shared List It list, as a to-do card.
 
 <table align="center">
   <tr>
@@ -163,7 +163,7 @@ The "new at this step" ingredient rail is the one thing a phone-driven cook has 
 
 Your List It list shows up as `todo.…` in Home Assistant. Tick, add, rename and remove lines from a dashboard or by voice; your phones see the change, and the other way round. Home Assistant checks for changes every 30 seconds.
 
-**Only a synced list syncs.** weReci keeps a list on its servers only when you ask it to: share it with your cookbook partner, or — on your own — turn on **Sync my list** from List It in the app. A list that lives only on your phone stays on your phone. Until you turn syncing on, this entity is `unavailable` with reason `no_synced_list`.
+**Only a shared list syncs.** weReci keeps a list on its servers only when you share it: tap **Share the list** in List It (with or without a cookbook partner), ask your assistant to put things on your *shared* list, or turn on **Lists your assistant makes → share them by default** in weReci's settings. A list that lives only on your phone stays on your phone. Until a list is shared, this entity is `unavailable` with reason `no_synced_list`.
 
 <p align="center">
   <img src="docs/screenshots/entities-and-shopping-list.webp" alt="The integration's entities on the device page beside the synced shopping list as a to-do card" width="440"><br>
@@ -178,7 +178,7 @@ The entity's `reason` attribute says why:
 
 | `reason` | Meaning |
 |---|---|
-| `no_synced_list` | This account isn't syncing a list. Turn on **Sync my list** from List It in the app (or share a list with your cookbook partner). Home Assistant checks again every 15 minutes while this is the answer. |
+| `no_synced_list` | This account isn't sharing a list. Tap **Share the list** in List It, or ask your assistant to share one. Home Assistant checks again every 15 minutes while this is the answer. |
 | `not_shared` | Your cookbook partner has a shared list you haven't joined. Join from List It in the app. |
 | `permission_required` | The shopping-list permission wasn't approved. Remove and re-add the integration. |
 | `unavailable` | weReci couldn't be reached. |
