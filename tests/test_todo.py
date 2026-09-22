@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
 
+from custom_components.wereci.const import LIST_ABSENT_POLL_INTERVAL, LIST_POLL_INTERVAL
 from custom_components.wereci.coordinator import parse_list
 
 from .conftest import LIST
@@ -73,6 +74,22 @@ async def test_no_synced_list_is_unavailable_with_a_reason(
     await _setup(hass, entry)
     state = hass.states.get(ENTITY)
     assert state.state == "unavailable"
+    # …and the poll backs off: the answer won't change until they act in the app.
+    coordinator = entry.runtime_data.list_coordinator
+    assert coordinator.update_interval == LIST_ABSENT_POLL_INTERVAL
+
+    list_call.return_value = LIST
+    await coordinator.async_refresh()
+    assert coordinator.update_interval == LIST_POLL_INTERVAL
+    assert len(await _items(hass)) == 2
+
+
+async def test_a_transient_failure_keeps_the_short_poll(
+    hass: HomeAssistant, entry, list_call
+) -> None:
+    list_call.return_value = {"available": False, "reason": "unavailable"}
+    await _setup(hass, entry)
+    assert entry.runtime_data.list_coordinator.update_interval == LIST_POLL_INTERVAL
 
 
 async def test_a_write_that_finds_no_list_raises(

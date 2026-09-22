@@ -29,6 +29,11 @@ CONF_CONTROL_PANEL = "control_panel"
 # A seq check is one Redis HGET server-side; the full list is only re-read
 # when the seq moved.
 LIST_POLL_INTERVAL = timedelta(seconds=30)
+# No synced list for this account (solo, or not joined in the app): the
+# answer won't change until they act in weReci, so a 30 s poll is only load
+# and trace noise. Look again every 15 min; the short interval comes back
+# the moment a list appears.
+LIST_ABSENT_POLL_INTERVAL = timedelta(minutes=15)
 TOOLS_POLL_INTERVAL = timedelta(minutes=30)
 TOOL_TIMEOUT = 45
 LIST_TIMEOUT = 20

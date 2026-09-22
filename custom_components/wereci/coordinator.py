@@ -21,6 +21,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import TokenManager, WereciError, mcp_session, tool_json
 from .const import (
     DOMAIN,
+    LIST_ABSENT_POLL_INTERVAL,
     LIST_POLL_INTERVAL,
     LIST_TIMEOUT,
     TOOL_TIMEOUT,
@@ -87,6 +88,10 @@ def parse_list(data: dict[str, Any]) -> ListState:
     )
 
 
+# Reasons that mean "no list to read" rather than "couldn't read it".
+_LIST_ABSENT = frozenset({"no_synced_list", "not_shared"})
+
+
 class WereciListCoordinator(DataUpdateCoordinator[ListState]):
     """Polls the list's seq; re-reads the list only when it moved."""
 
@@ -144,7 +149,16 @@ class WereciListCoordinator(DataUpdateCoordinator[ListState]):
             raise UpdateFailed(str(err)) from err
         if data.get("unchanged") and prev is not None:
             return prev
-        return parse_list(data)
+        state = parse_list(data)
+        # A list that isn't there (no_synced_list / not_shared) stays that way
+        # until the person acts in the app — back off rather than re-read the
+        # same "no" every 30 s. Transient trouble keeps the short interval.
+        self.update_interval = (
+            LIST_ABSENT_POLL_INTERVAL
+            if not state.available and state.reason in _LIST_ABSENT
+            else LIST_POLL_INTERVAL
+        )
+        return state
 
     async def async_change(self, **changes: list[str]) -> None:
         """Apply check / uncheck / remove / add, and take the answer as state."""
