@@ -29,6 +29,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.httpx_client import get_async_client
 
+from .coordinator import tag_along_list_refresh
 from .const import (
     CAST_API_PATH,
     CAST_POLL_TIMEOUT,
@@ -233,6 +234,8 @@ class CookDisplay:
             data = res.json()
         except (httpx.HTTPError, ValueError) as err:
             raise HomeAssistantError("weReci could not open a cook display") from err
+        finally:
+            tag_along_list_refresh(self.hass, self._entry)
         code, token = data.get("code"), data.get("token")
         if not isinstance(code, str) or not isinstance(token, str):
             raise HomeAssistantError("weReci could not open a cook display")
@@ -442,6 +445,8 @@ class CookDisplay:
             )
         except httpx.HTTPError as err:
             raise HomeAssistantError("weReci could not be reached") from err
+        finally:
+            tag_along_list_refresh(self.hass, self._entry)
         if res.status_code != 200:
             raise HomeAssistantError("The weReci cook display is no longer connected")
 
@@ -464,6 +469,8 @@ class CookDisplay:
             )
         except httpx.HTTPError:
             pass  # the channel expires on its own
+        finally:
+            tag_along_list_refresh(self.hass, self._entry)
         if restore:
             await self._restore_screen(session.target)
 

@@ -161,7 +161,7 @@ The "new at this step" ingredient rail is the one thing a phone-driven cook has 
 
 ## The shopping list
 
-Your List It list shows up as `todo.…` in Home Assistant. Tick, add, rename and remove lines from a dashboard or by voice; your phones see the change, and the other way round. Home Assistant checks for changes every 30 seconds while a list is shared, every 5 minutes while none is, and immediately after any weReci tool your assistant calls. `button.…_refresh_shopping_list` asks right now — press it after sharing a list from your phone.
+Your List It list shows up as `todo.…` in Home Assistant. Tick, add, rename and remove lines from a dashboard or by voice; your phones see the change, and the other way round. Home Assistant checks for changes every 30 seconds while a list is shared and every 5 minutes while none is — and every other request this integration makes to weReci (a recipe search, a cook display opened, stepped or stopped, any tool your assistant calls) brings a list check along with it. `button.…_refresh_shopping_list` asks right now — press it after sharing a list from your phone.
 
 **Only a shared list syncs.** weReci keeps a list on its servers only when you share it: tap **Share the list** in List It (with or without a cookbook partner), ask your assistant to put things on your *shared* list, or turn on **Lists your assistant makes → share them by default** in weReci's settings. A list that lives only on your phone stays on your phone. Until a list is shared, this entity is `unavailable` with reason `no_synced_list`.
 

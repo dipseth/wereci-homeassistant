@@ -11,7 +11,7 @@ import httpx
 from mcp import McpError
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.config_entry_oauth2_flow import (
     OAuth2TokenRequestReauthError,
@@ -92,6 +92,23 @@ def parse_list(data: dict[str, Any]) -> ListState:
 _LIST_ABSENT = frozenset({"no_synced_list", "not_shared"})
 
 
+@callback
+def tag_along_list_refresh(hass: HomeAssistant, entry: Any) -> None:
+    """Every request this integration makes to weReci brings the list with it.
+
+    The list is polled slowly while none is shared, and a shopper's phone
+    or an assistant can share one at any moment. Rather than wait for the
+    poll — or for someone to press the refresh button — any other weReci
+    request (a recipe search, a cook display opened or stepped, an Assist
+    tool call) schedules one list read afterwards. The coordinator debounces
+    it (10 s), so stepping through a recipe costs at most one read per burst.
+    """
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is None:
+        return
+    hass.async_create_task(runtime.list_coordinator.async_request_refresh())
+
+
 class WereciListCoordinator(DataUpdateCoordinator[ListState]):
     """Polls the list's seq; re-reads the list only when it moved."""
 
@@ -137,6 +154,8 @@ class WereciListCoordinator(DataUpdateCoordinator[ListState]):
             return await self._call(tool, args)
         except WereciError as err:
             raise HomeAssistantError(f"weReci: {err}") from err
+        finally:
+            tag_along_list_refresh(self.hass, self.config_entry)
 
     async def _async_update_data(self) -> ListState:
         prev = self.data

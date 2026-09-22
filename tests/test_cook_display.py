@@ -415,7 +415,9 @@ async def test_a_recipe_makes_the_link_open_cook_mode_on_it(
         ]
     }
     res = await _show(hass, entity_id=player, recipe="carrot soup")
-    list_call.assert_awaited_with("search_recipes", {"query": "carrot soup", "limit": 5})
+    # assert_any_await: every weReci request now brings a list read along
+    # (tag_along_list_refresh), so the search is no longer the LAST call.
+    list_call.assert_any_await("search_recipes", {"query": "carrot soup", "limit": 5})
     assert res == {
         "code": "ABCDEF", "link": link, "recipe_id": "r-2", "title": "Carrot soup"
     }
@@ -767,4 +769,5 @@ async def test_a_breakdown_made_in_the_app_can_be_toggled_never_made(
     await _tap(hass, relay, {"do": "breakdown"})
     last = relay.pushed[-1]
     assert (last["breakdownActive"], last["totalSteps"], last["stepIdx"]) == (True, 6, 5)
-    assert {c[0] for c in calls} == {"get_recipe"}  # nothing was generated
+    # nothing was generated (the list read tags along with every request)
+    assert {c[0] for c in calls} - {"get_shopping_list"} == {"get_recipe"}

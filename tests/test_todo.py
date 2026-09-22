@@ -136,3 +136,18 @@ async def test_the_refresh_button_asks_weReci_now(hass: HomeAssistant, entry, li
     await hass.async_block_till_done()
     assert list_call.await_count == calls_before + 1
     assert len(await _items(hass)) == 2
+
+
+async def test_any_other_wereci_request_brings_the_list_along(
+    hass: HomeAssistant, entry, list_call
+) -> None:
+    list_call.return_value = {"available": False, "reason": "no_synced_list"}
+    await _setup(hass, entry)
+    before = list_call.await_count
+    list_call.return_value = LIST
+    # A recipe search from the panel — nothing to do with the list…
+    await entry.runtime_data.list_coordinator.async_call_tool("search_recipes", {"query": "soup"})
+    await hass.async_block_till_done()
+    # …and yet the list was read again right after it (search + list = 2).
+    assert list_call.await_count == before + 2
+    assert len(await _items(hass)) == 2
