@@ -10,7 +10,8 @@ OAUTH_DISCOVERY_PATH = "/.well-known/oauth-authorization-server"
 MY_REDIRECT_URI = "https://my.home-assistant.io/redirect/oauth"
 
 # recipes:read is the base grant; list:sync is the synced shopping list;
-# cook:assist is scaling and swaps on a phone-free cook display.
+# cook:assist is scaling and swaps on a phone-free cook display — weReci's own
+# Cook Mode routes, called directly with the token (not MCP tools).
 SCOPES = "recipes:read list:sync cook:assist"
 CLIENT_NAME = "Home Assistant"
 
@@ -42,14 +43,14 @@ TOOL_GET_LIST = "get_shopping_list"
 TOOL_UPDATE_LIST = "update_shopping_list"
 TOOL_GET_RECIPE = "get_recipe"
 TOOL_SEARCH_RECIPES = "search_recipes"
-TOOL_SCALE = "scale_recipe"
-TOOL_SCALE_JOB = "get_scale_job"
-TOOL_SUBSTITUTE = "suggest_substitute"
 # The todo entity owns these two; the Assist agent gets everything else plus
 # them (ticking a line by voice is the point).
 
 # Cook display: the pair-by-code cast relay, with Home Assistant as the display.
 CAST_API_PATH = "/api/fairbanks-recipes/cast"
+# Cook Mode's scale / substitute, the same metered runs as a tap in the app.
+SCALE_API_PATH = "/api/fairbanks-recipes/scale"
+SUBSTITUTE_API_PATH = "/api/fairbanks-recipes/substitute"
 CAST_RECEIVER_PATH = "/cast"
 CAST_REQUEST_TIMEOUT = 12
 # The relay holds a poll ~25s; clear that with margin.

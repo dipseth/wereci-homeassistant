@@ -3,6 +3,7 @@
 import asyncio
 import json
 import json as jsonlib
+from contextlib import asynccontextmanager
 from unittest.mock import patch
 
 import pytest
@@ -680,14 +681,27 @@ def _tools(answers: dict):
     return answer, calls
 
 
-async def _cook(hass, entry, list_call, answers) -> list:
+@asynccontextmanager
+async def _cook(hass, entry, list_call, answers):
+    """A phone-free cook; `answers` are weReci's own API (not MCP), keyed by path."""
     await _setup(hass, entry)
     async_mock_service(hass, "cast", "show_lovelace_view")
-    answer, calls = _tools({"get_recipe": RECIPE, **answers})
+    answer, _ = _tools({"get_recipe": RECIPE})
     list_call.side_effect = answer
-    await _show(hass, entity_id=_cast_player(hass), recipe_id="r-2", without_phone=True)
-    await _settle(hass)
-    return calls
+    calls: list[tuple[str, str, dict | None]] = []
+
+    async def request(method: str, path: str, body: dict | None) -> dict:
+        calls.append((method, path, body))
+        got = answers[path.split("?")[0]]
+        return got.pop(0) if isinstance(got, list) else got
+
+    with patch(
+        "custom_components.wereci.coordinator.WereciListCoordinator._request",
+        side_effect=request,
+    ):
+        await _show(hass, entity_id=_cast_player(hass), recipe_id="r-2", without_phone=True)
+        await _settle(hass)
+        yield calls
 
 
 async def _tap(hass: HomeAssistant, relay, cmd: dict) -> None:
@@ -701,52 +715,61 @@ async def test_scaling_from_the_screen_is_weRecis_own_run(
 ) -> None:
     scaled = {"scaledIngredients": ["2 onions", "1 kg carrots"]}
     with patch("custom_components.wereci.sender._SCALE_POLL_SECONDS", 0):
-        calls = await _cook(hass, entry, list_call, {
-            "scale_recipe": {"status": "pending", "job_id": "j1"},
-            "get_scale_job": [{"state": "running"}, {"state": "done", "result": scaled}],
-        })
-        await _tap(hass, relay, {"do": "scale", "factor": 2})
-        await _settle(hass)
+        async with _cook(hass, entry, list_call, {
+            "/api/fairbanks-recipes/scale": [
+                {"status": "pending", "job_id": "j1"},
+                {"state": "running"},
+                {"state": "done", "result": scaled},
+            ],
+        }) as calls:
+            await _tap(hass, relay, {"do": "scale", "factor": 2})
+            await _settle(hass)
+            assert calls[0] == (
+                "POST",
+                "/api/fairbanks-recipes/scale",
+                {"recipeId": "r-2", "factor": 2.0, "notes": "", "substitutions": {}},
+            )
+            assert calls[1:] == [("GET", "/api/fairbanks-recipes/scale?job_id=j1", None)] * 2
+            assert any(p["busyLabel"] == "Scaling…" for p in relay.pushed)  # the screen says so
+            last = relay.pushed[-1]
+            assert (last["scaleLabel"], last["busyLabel"]) == ("2×", None)
+            assert [i["text"] for i in last["allIngredients"]] == ["2 onions", "1 kg carrots"]
 
-    assert ("scale_recipe", {"recipe_id": "r-2", "factor": 2.0, "substitutions": {}}) in calls
-    assert [c for c in calls if c[0] == "get_scale_job"] == [("get_scale_job", {"job_id": "j1"})] * 2
-    assert any(p["busyLabel"] == "Scaling…" for p in relay.pushed)  # the screen says so
-    last = relay.pushed[-1]
-    assert (last["scaleLabel"], last["busyLabel"]) == ("2×", None)
-    assert [i["text"] for i in last["allIngredients"]] == ["2 onions", "1 kg carrots"]
-
-    await _tap(hass, relay, {"do": "scale", "factor": 1})
-    assert relay.pushed[-1]["allIngredients"][0]["text"] == "1 onion"
+            await _tap(hass, relay, {"do": "scale", "factor": 1})
+            assert relay.pushed[-1]["allIngredients"][0]["text"] == "1 onion"
 
 
 async def test_a_swap_is_offered_picked_and_restored(
     hass: HomeAssistant, entry, list_call, relay
 ) -> None:
-    await _cook(hass, entry, list_call, {
-        "suggest_substitute": {"suggestions": [
+    async with _cook(hass, entry, list_call, {
+        "/api/fairbanks-recipes/substitute": {"suggestions": [
             {"replacement": "2 shallots", "ratio": "2:1", "confidence": "high",
              "reasoning": "Milder allium."},
         ]},
-    })
-    await _tap(hass, relay, {"do": "swapOpts", "i": 0})
-    panel = relay.pushed[-1]["swapPanel"]
-    assert (panel["status"], panel["options"][0]["replacement"]) == ("ready", "2 shallots")
-    assert panel["options"][0]["ratioText"] == "Ratio: 2:1"
-    assert "_found" not in panel
+    }) as calls:
+        await _tap(hass, relay, {"do": "swapOpts", "i": 0})
+        assert calls == [
+            ("POST", "/api/fairbanks-recipes/substitute", {"recipeId": "r-2", "missingIngredient": "1 onion"})
+        ]
+        panel = relay.pushed[-1]["swapPanel"]
+        assert (panel["status"], panel["options"][0]["replacement"]) == ("ready", "2 shallots")
+        assert panel["options"][0]["ratioText"] == "Ratio: 2:1"
+        assert "_found" not in panel
 
-    await _tap(hass, relay, {"do": "swapPick", "i": 0, "k": 0})
-    assert relay.pushed[-1]["allIngredients"][0]["text"] == "2 shallots"
-    assert relay.pushed[-1]["swapPanel"] is None
+        await _tap(hass, relay, {"do": "swapPick", "i": 0, "k": 0})
+        assert relay.pushed[-1]["allIngredients"][0]["text"] == "2 shallots"
+        assert relay.pushed[-1]["swapPanel"] is None
 
-    await _tap(hass, relay, {"do": "swapClear", "i": 0})
-    assert relay.pushed[-1]["allIngredients"][0]["text"] == "1 onion"
+        await _tap(hass, relay, {"do": "swapClear", "i": 0})
+        assert relay.pushed[-1]["allIngredients"][0]["text"] == "1 onion"
 
 
 async def test_a_connection_without_cook_assist_is_asked_to_sign_in_again(
     hass: HomeAssistant, entry, list_call, relay
 ) -> None:
-    await _cook(hass, entry, list_call, {"scale_recipe": {"error": "permission_required"}})
-    await _tap(hass, relay, {"do": "scale", "factor": 2})
+    async with _cook(hass, entry, list_call, {"/api/fairbanks-recipes/scale": {"error": "permission_required"}}):
+        await _tap(hass, relay, {"do": "scale", "factor": 2})
 
     last = relay.pushed[-1]
     assert last["controls"]["scale"] is False and last["scaleLabel"] is None

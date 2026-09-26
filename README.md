@@ -267,7 +267,7 @@ intents:
 
 ## How it connects
 
-OAuth 2.1 with PKCE, no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync cook:assist`. **It can never add, change or delete recipes in your collection.**
+OAuth 2.1 with PKCE, no client secret. On first setup the integration registers your Home Assistant as a public client with weReci, then talks to weReci's MCP server (`https://wereci.xyz/api/mcp`) with the scopes `recipes:read list:sync cook:assist`. Scaling and swaps on a phone-free cook display are the one exception: those call weReci's own Cook Mode endpoints directly with the same token (that is what `cook:assist` allows), so they never show up as tools for Assist. **It can never add, change or delete recipes in your collection.**
 
 The cook display uses weReci's public pair-by-code relay instead. Home Assistant holds a token for one short-lived display channel and never sees your recipes, only the step your phone chooses to show.
 

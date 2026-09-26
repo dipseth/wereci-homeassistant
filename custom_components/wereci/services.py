@@ -96,6 +96,7 @@ async def async_start_cook(
             # Connected before cook:assist existed: the sign-in flow is how a
             # connection gains a permission, so ask for it again.
             lambda: runtime.entry.async_start_reauth(hass),
+            runtime.list_coordinator.async_request,
         )
         if data.get("without_phone")
         else None

@@ -6,9 +6,9 @@ commands. This claims the channel's code the way a phone would, pushes the
 snapshots, and answers the commands: taps on the screen, the step buttons and
 voice all arrive here as intent.
 
-Scaling and ingredient swaps are weReci's own (the scale_recipe /
-suggest_substitute tools, behind the cook:assist permission) — the same runs,
-metered the same way, as the taps in the app. Break it down is only ever READ:
+Scaling and ingredient swaps are weReci's own Cook Mode routes, called
+directly with the account's token (behind the cook:assist permission) — the
+same runs, metered the same way, as the taps in the app. Break it down is only ever READ:
 generating one saves it onto the recipe, and a connection is promised it will
 never change the collection. A recipe already broken down in the app offers
 the toggle; any other recipe simply doesn't.
@@ -21,6 +21,7 @@ from collections.abc import Callable
 import json
 import logging
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -32,9 +33,8 @@ from .const import (
     CAST_API_PATH,
     CAST_POLL_TIMEOUT,
     CAST_REQUEST_TIMEOUT,
-    TOOL_SCALE,
-    TOOL_SCALE_JOB,
-    TOOL_SUBSTITUTE,
+    SCALE_API_PATH,
+    SUBSTITUTE_API_PATH,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +49,8 @@ _SCALE_POLL_SECONDS = 2
 _SCALE_POLLS = 150
 _CONFIDENCE = {"high": "High confidence", "medium": "Medium confidence", "low": "Low confidence"}
 
-ToolCaller = Callable[[str, dict[str, Any]], Any]
+# (method, path, body) → the JSON answer; errors come back as {"error": …}.
+Requester = Callable[[str, str, dict[str, Any] | None], Any]
 
 
 class PermissionNeeded(Exception):
@@ -69,7 +70,7 @@ class HaSender:
         base_url: str,
         recipe: dict[str, Any],
         on_lost: Callable[[], None],
-        call_tool: ToolCaller | None = None,
+        request: Requester | None = None,
         on_permission_needed: Callable[[], None] | None = None,
     ) -> None:
         """Initialize."""
@@ -91,8 +92,8 @@ class HaSender:
         self._subs: dict[int, dict[str, Any]] = {}
         self._swap: dict[str, Any] | None = None
         self._busy: str | None = None
-        self._call_tool = call_tool
-        self._assist = call_tool is not None and bool(self._recipe_id)
+        self._request = request
+        self._assist = request is not None and bool(self._recipe_id)
         self._on_permission_needed = on_permission_needed
         self._op: asyncio.Task[None] | None = None
         self._create_task: Callable[..., Any] | None = None
@@ -262,20 +263,24 @@ class HaSender:
             return True
         return self._begin(self._run_scale(), "Scaling…")
 
-    async def _tool(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
-        assert self._call_tool is not None
-        got = await self._call_tool(name, args)
+    async def _call(
+        self, method: str, path: str, body: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        assert self._request is not None
+        got = await self._request(method, path, body)
         if got.get("error") == "permission_required":
             raise PermissionNeeded
         return got
 
     async def _run_scale(self) -> None:
         try:
-            got = await self._tool(
-                TOOL_SCALE,
+            got = await self._call(
+                "POST",
+                SCALE_API_PATH,
                 {
-                    "recipe_id": self._recipe_id,
+                    "recipeId": self._recipe_id,
                     "factor": self._factor,
+                    "notes": "",
                     "substitutions": {
                         str(i): {"replacement": str(s.get("replacement") or "")}
                         for i, s in self._subs.items()
@@ -291,7 +296,7 @@ class HaSender:
                 if polls > _SCALE_POLLS:
                     raise HomeAssistantError("scaling timed out")
                 await asyncio.sleep(_SCALE_POLL_SECONDS)
-                got = await self._tool(TOOL_SCALE_JOB, {"job_id": job_id})
+                got = await self._call("GET", f"{SCALE_API_PATH}?job_id={quote(str(job_id))}")
             if got.get("error") or got.get("state") == "failed":
                 raise HomeAssistantError(f"scaling failed: {got.get('error')}")
             result = got.get("result") if got.get("state") == "done" else got
@@ -310,9 +315,10 @@ class HaSender:
 
     async def _run_swap(self, i: int) -> None:
         try:
-            got = await self._tool(
-                TOOL_SUBSTITUTE,
-                {"recipe_id": self._recipe_id, "ingredient": self._ingredients[i]},
+            got = await self._call(
+                "POST",
+                SUBSTITUTE_API_PATH,
+                {"recipeId": self._recipe_id, "missingIngredient": self._ingredients[i]},
             )
             found = [f for f in got.get("suggestions") or [] if isinstance(f, dict)]
             status = "error" if got.get("error") else "ready"

@@ -16,6 +16,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.config_entry_oauth2_flow import (
     OAuth2TokenRequestReauthError,
 )
+from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import TokenManager, WereciError, mcp_session, tool_json
@@ -24,6 +25,7 @@ from .const import (
     LIST_ABSENT_POLL_INTERVAL,
     LIST_POLL_INTERVAL,
     LIST_TIMEOUT,
+    MCP_PATH,
     TOOL_TIMEOUT,
     TOOL_GET_LIST,
     TOOL_UPDATE_LIST,
@@ -147,6 +149,43 @@ class WereciListCoordinator(DataUpdateCoordinator[ListState]):
             raise WereciError(str(err)) from err
         except (TimeoutError, httpx.HTTPError, McpError) as err:
             raise WereciError(str(err) or type(err).__name__) from err
+
+    async def _request(
+        self, method: str, path: str, body: dict[str, Any] | None
+    ) -> dict[str, Any]:
+        url = f"{self._url.removesuffix(MCP_PATH)}{path}"
+        try:
+            async with asyncio.timeout(TOOL_TIMEOUT):
+                headers = {"Authorization": f"Bearer {await self._token_manager()}"}
+                res = await get_async_client(self.hass).request(
+                    method, url, json=body, headers=headers, timeout=TOOL_TIMEOUT
+                )
+        except OAuth2TokenRequestReauthError as err:
+            raise ConfigEntryAuthFailed("weReci sign-in expired") from err
+        except (TimeoutError, httpx.HTTPError) as err:
+            raise WereciError(str(err) or type(err).__name__) from err
+        try:
+            data = res.json()
+        except ValueError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        if res.is_success:
+            return data
+        # The shape the error answers always had: permission_required (403)
+        # asks for a reconnect, anything else is a failed run.
+        return {"error": "request_failed", **data, "status": res.status_code}
+
+    async def async_request(
+        self, method: str, path: str, body: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """One call to weReci's own API (not MCP) — Cook Mode's scale / swap."""
+        try:
+            return await self._request(method, path, body)
+        except WereciError as err:
+            raise HomeAssistantError(f"weReci: {err}") from err
+        finally:
+            tag_along_list_refresh(self.hass, self.config_entry)
 
     async def async_call_tool(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
         """One read-only tool call for the rest of the integration."""
