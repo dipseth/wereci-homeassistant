@@ -23,6 +23,7 @@
   <img src="https://img.shields.io/github/v/release/dipseth/wereci-homeassistant?color=9C8A45&label=release&style=flat-square" alt="release">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.9%2B-0B3B24?style=flat-square" alt="Home Assistant 2026.9+">
   <img src="https://img.shields.io/badge/auth-OAuth%202.1%20%2B%20PKCE-5F9D8A?style=flat-square" alt="OAuth 2.1 + PKCE">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-D6917B?style=flat-square" alt="License: Apache 2.0"></a>
 </p>
 
 ---
@@ -278,6 +279,12 @@ Home Assistant's built-in Model Context Protocol integration can't be used inste
     uv sync && uv run pytest
 
 Tests run against real Home Assistant via `pytest-homeassistant-custom-component`; `mcp` is pinned to the version Home Assistant core ships.
+
+## License
+
+Copyright 2026 Reciwe LLC. This integration is open source under the [Apache License 2.0](LICENSE).
+
+The license covers the code in this repository. It does not grant rights to the weReci name or logo, which are trademarks of Reciwe LLC, and it does not cover the weReci service itself: a weReci account is governed by weReci's own [terms](https://wereci.xyz/terms).
 
 ---
 
