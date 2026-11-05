@@ -6,8 +6,6 @@ import asyncio
 from dataclasses import dataclass
 import logging
 
-import httpx
-from mcp import McpError
 from probatio import from_openapi
 import voluptuous as vol
 
@@ -21,6 +19,7 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util.json import JsonObjectType
 
+from .compat import MCPError, httpx, tool_input_schema
 from .coordinator import tag_along_list_refresh
 from .api import TokenManager, mcp_session
 from .const import DOMAIN, TOOL_TIMEOUT, TOOLS_POLL_INTERVAL
@@ -74,10 +73,10 @@ class WereciTool(llm.Tool):
             if err.response.status_code == 401:
                 self._entry.async_start_reauth(hass)
             raise HomeAssistantError(f"weReci error: {err}") from err
-        except (httpx.HTTPError, McpError) as err:
+        except (httpx.HTTPError, MCPError) as err:
             raise HomeAssistantError(f"weReci error: {err}") from err
         tag_along_list_refresh(hass, self._entry)
-        return result.model_dump(exclude_unset=True, exclude_none=True)
+        return result.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
 
 
 class WereciToolsCoordinator(DataUpdateCoordinator[list[llm.Tool]]):
@@ -112,13 +111,13 @@ class WereciToolsCoordinator(DataUpdateCoordinator[list[llm.Tool]]):
             if err.response.status_code == 401:
                 raise ConfigEntryAuthFailed("weReci rejected the token") from err
             raise UpdateFailed(str(err)) from err
-        except (TimeoutError, httpx.HTTPError, McpError) as err:
+        except (TimeoutError, httpx.HTTPError, MCPError) as err:
             raise UpdateFailed(str(err) or type(err).__name__) from err
 
         tools: list[llm.Tool] = []
         for tool in listed.tools:
             try:
-                parameters = from_openapi(tool.inputSchema)
+                parameters = from_openapi(tool_input_schema(tool))
             except Exception as err:  # noqa: BLE001 - one bad schema must not drop the rest
                 _LOGGER.warning("Skipping weReci tool %s: %s", tool.name, err)
                 continue

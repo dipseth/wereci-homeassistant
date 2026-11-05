@@ -21,7 +21,6 @@ from typing import Any
 from urllib.parse import quote
 
 from aiohttp import web
-import httpx
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
@@ -29,6 +28,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.httpx_client import get_async_client
 
+from .compat import httpx
 from .coordinator import tag_along_list_refresh
 from .const import (
     CAST_API_PATH,

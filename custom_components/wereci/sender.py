@@ -23,12 +23,12 @@ import logging
 from typing import Any
 from urllib.parse import quote
 
-import httpx
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.httpx_client import get_async_client
 
+from .compat import httpx
 from .const import (
     CAST_API_PATH,
     CAST_POLL_TIMEOUT,

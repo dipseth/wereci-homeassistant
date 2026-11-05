@@ -9,7 +9,6 @@ import json
 import logging
 from typing import Any
 
-import httpx
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
@@ -18,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.httpx_client import create_async_httpx_client, get_async_client
 
+from .compat import httpx
 from .const import (
     CLIENT_NAME,
     DOMAIN,
@@ -148,8 +148,9 @@ async def mcp_session(
                 http_client=create_async_httpx_client(
                     hass, headers=headers, timeout=httpx.Timeout(TOOL_TIMEOUT, connect=10)
                 ),
-            ) as (read_stream, write_stream, _),
-            ClientSession(read_stream, write_stream) as session,
+            ) as streams,
+            # mcp 1.x yields (read, write, get_session_id); 2.x yields (read, write).
+            ClientSession(streams[0], streams[1]) as session,
         ):
             await session.initialize()
             yield session

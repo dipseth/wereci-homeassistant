@@ -7,8 +7,6 @@ from dataclasses import dataclass, field
 import logging
 from typing import Any
 
-import httpx
-from mcp import McpError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -19,6 +17,7 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .compat import MCPError, httpx
 from .api import TokenManager, WereciError, mcp_session, tool_json
 from .const import (
     DOMAIN,
@@ -147,7 +146,7 @@ class WereciListCoordinator(DataUpdateCoordinator[ListState]):
             if err.response.status_code == 401:
                 raise ConfigEntryAuthFailed("weReci rejected the token") from err
             raise WereciError(str(err)) from err
-        except (TimeoutError, httpx.HTTPError, McpError) as err:
+        except (TimeoutError, httpx.HTTPError, MCPError) as err:
             raise WereciError(str(err) or type(err).__name__) from err
 
     async def _request(

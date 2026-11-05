@@ -15,7 +15,6 @@ import logging
 import textwrap
 from urllib.parse import urljoin, urlsplit
 
-import httpx
 
 from homeassistant.components.image import (
     Image,
@@ -28,6 +27,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .compat import httpx
 from .const import CAST_REQUEST_TIMEOUT
 from .cook_display import STATUS_COOKING, STATUS_WAITING, CookDisplay
 from .coordinator import WereciConfigEntry
